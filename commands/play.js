@@ -1,59 +1,44 @@
-const { spawn } = require("child_process");
-const {
+const { 
   joinVoiceChannel,
   createAudioPlayer,
-  createAudioResource
+  createAudioResource,
+  AudioPlayerStatus,
+  StreamType
 } = require("@jubbio/voice");
-const path = require("path");
-const fs = require("fs");
-
-const VOICE_CHANNEL_ID = "546336747034783744";
 
 module.exports = {
   name: "play",
 
   async execute(client, message, args) {
 
-    const url = args[0];
-    if (!url) {
-      return message.reply("YouTube linki gir.");
+    if (!args[0]) {
+      return message.reply("❌ Link gir.");
     }
 
-    message.reply("İndiriliyor...");
+    const VOICE_CHANNEL_ID = "546336747034783744";
 
-    const filePath = path.join(__dirname, "song.mp3");
-
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-
-    const ytdlp = spawn("yt-dlp", [
-      "-x",
-      "--audio-format",
-      "mp3",
-      "-o",
-      filePath,
-      url
-    ]);
-
-    ytdlp.on("close", async (code) => {
-      if (code !== 0) {
-        return message.reply("İndirme başarısız.");
-      }
-
-      const connection = joinVoiceChannel({
-        channelId: VOICE_CHANNEL_ID,
-        guildId: message.guild_id,
-        adapterCreator: message.guild.voiceAdapterCreator
-      });
-
-      const player = createAudioPlayer();
-      const resource = createAudioResource(filePath);
-
-      player.play(resource);
-      connection.subscribe(player);
-
-      message.reply("Çalıyor...");
+    const connection = joinVoiceChannel({
+      channelId: VOICE_CHANNEL_ID,
+      guildId: message.guildId,
+      adapterCreator: client.voice.adapters.get(message.guildId)
     });
+
+    const player = createAudioPlayer();
+
+    const resource = createAudioResource(args[0], {
+      inputType: StreamType.Raw,
+      inlineVolume: false
+    });
+
+    player.play(resource);
+    connection.subscribe(player);
+
+    player.on(AudioPlayerStatus.Playing, () => {
+      console.log("🎵 RAW PCM Çalıyor!");
+    });
+
+    player.on("error", console.error);
+
+    message.reply("🎶 RAW mod test...");
   }
 };
