@@ -1,3 +1,16 @@
+require("dotenv").config();
+const { Client, GatewayIntentBits } = require("@jubbio/core");
+
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildVoiceStates
+  ]
+});
+
+// 🔥 BURAYA TAŞI
 client.musicPlayer = null;
 client.musicConnection = null;
 require("dotenv").config();
