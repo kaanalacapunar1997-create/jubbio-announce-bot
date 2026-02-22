@@ -11,8 +11,17 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildVoiceStates // ✅ Voice intent açık
+    GatewayIntentBits.GuildVoiceStates // ⚠️ Voice intent açık olmalı
   ]
+});
+
+// 🔥 VOICE STATE CACHE
+client.voiceStates = new Map();
+
+// Voice event debug
+client.on("voiceStateUpdate", (state) => {
+  console.log("🎧 VOICE EVENT GELDİ:", state);
+  client.voiceStates.set(state.user_id, state);
 });
 
 // 🔥 KOMUTLARI YÜKLE
@@ -28,12 +37,7 @@ for (const file of commandFiles) {
 // 🔥 READY EVENT
 client.once("ready", () => {
   console.log("✅ Bot hazır!");
-  
-  if (client.voice && client.voice.adapters) {
-    console.log("🎧 Voice adapters:", client.voice.adapters);
-  } else {
-    console.log("❌ Voice adapters bulunamadı!");
-  }
+  console.log("🎧 Voice adapters:", client.voice.adapters);
 });
 
 // 🔥 MESAJ EVENT
@@ -58,13 +62,8 @@ client.on("messageCreate", async (message) => {
 // 🔥 LOGIN
 client.login(process.env.TOKEN);
 
-// 🔥 Railway uyku engelleyici mini server
+// 🔥 Railway mini server
 http.createServer((req, res) => {
   res.writeHead(200);
   res.end("Bot aktif.");
-}).listen(process.env.PORT || 3000);
-client.voiceStates = new Map();
-
-client.on("voiceStateUpdate", (state) => {
-  client.voiceStates.set(state.user_id, state);
-});
+}).listen(3000);
