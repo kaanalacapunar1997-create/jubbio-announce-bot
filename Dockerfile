@@ -2,15 +2,13 @@ FROM node:20
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
-    ffmpeg \
-    yt-dlp \
-    curl \
-    libopus-dev \
-    libsodium-dev \
-    && apt-get clean
+RUN apt-get update && \
+    apt-get install -y ffmpeg curl python3 python3-pip && \
+    pip3 install yt-dlp && \
+    apt-get clean
 
 COPY package*.json ./
+
 RUN npm install
 
 COPY . .
