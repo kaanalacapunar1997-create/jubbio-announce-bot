@@ -1,3 +1,5 @@
+client.musicPlayer = null;
+client.musicConnection = null;
 require("dotenv").config();
 const { Client, GatewayIntentBits, Collection } = require("@jubbio/core");
 const fs = require("fs");
@@ -48,7 +50,7 @@ client.on("voiceStateUpdate", (oldState, newState) => {
     client.userVoiceChannels.delete(newState.userId);
   }
 });
-client.login(process.env.TOKEN);
+client.login(process.env.BOT_TOKEN);
 client.on("voiceStateUpdate", (oldState, newState) => {
   console.log("Voice Update:", newState);
 });client.once("ready", () => {
