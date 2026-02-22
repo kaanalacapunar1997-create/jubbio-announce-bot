@@ -1,49 +1,40 @@
 require("dotenv").config();
-const { Client } = require("@jubbio/core");
-const playCommand = require("./commands/play");
-
-// 🔥 TOKEN kontrolü
-if (!process.env.TOKEN) {
-  console.error("❌ TOKEN bulunamadı! Railway Variables kısmına TOKEN ekle.");
-  process.exit(1);
-}
+const { Client, GatewayIntentBits, Collection } = require("@jubbio/core");
+const fs = require("fs");
 
 const client = new Client({
   intents: [
-    "GUILDS",
-    "GUILD_MESSAGES",
-    "MESSAGE_CONTENT",
-    "GUILD_VOICE_STATES"
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildVoiceStates
   ]
 });
 
-client.on("ready", () => {
-  console.log(`✅ ${client.user.username} giriş yaptı ve aktif!`);
-});
+client.commands = new Collection();
+
+const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
+
+for (const file of commandFiles) {
+  const command = require(`./commands/${file}`);
+  client.commands.set(command.name, command);
+}
 
 client.on("messageCreate", async (message) => {
-  if (!message.content) return;
   if (message.author.bot) return;
   if (!message.content.startsWith("!")) return;
 
   const args = message.content.slice(1).trim().split(/ +/);
-  const command = args.shift().toLowerCase();
+  const commandName = args.shift().toLowerCase();
 
-  if (command === "play") {
-    try {
-      await playCommand.execute(client, message, args);
-    } catch (err) {
-      console.error("Komut hatası:", err);
-      message.reply("❌ Komut çalıştırılırken hata oluştu.");
-    }
-  }
+  const command = client.commands.get(commandName);
+  if (!command) return;
+
+  command.execute(client, message, args);
 });
 
-// 🔥 Login
-client.login(process.env.TOKEN)
-  .then(() => {
-    console.log("🔐 Login isteği gönderildi...");
-  })
-  .catch((err) => {
-    console.error("❌ Login hatası:", err);
-  });
+client.once("ready", () => {
+  console.log("✅ Bot hazır!");
+});
+
+client.login(process.env.TOKEN);
