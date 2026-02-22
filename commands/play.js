@@ -1,3 +1,6 @@
+const { spawn } = require("child_process");
+const fs = require("fs");
+const path = require("path");
 const { 
   joinVoiceChannel,
   createAudioPlayer,
@@ -17,26 +20,63 @@ module.exports = {
     const VOICE_CHANNEL_ID = "546336747034783744";
     const GUILD_ID = message.guildId;
 
-    const connection = joinVoiceChannel({
-      channelId: VOICE_CHANNEL_ID,
-      guildId: GUILD_ID,
-      adapterCreator: client.voice.adapters.get(GUILD_ID)
+    const mp3Path = path.join(__dirname, "song.mp3");
+    const wavPath = path.join(__dirname, "song.wav");
+
+    message.reply("⬇️ İndiriliyor...");
+
+    // 1️⃣ mp3 indir
+    const ytdlp = spawn("yt-dlp", [
+      "-f", "bestaudio",
+      "-o", mp3Path,
+      args[0]
+    ]);
+
+    ytdlp.on("close", (code) => {
+
+      if (code !== 0) {
+        return message.reply("❌ İndirme hatası.");
+      }
+
+      // 2️⃣ wav'a çevir
+      const ffmpeg = spawn("ffmpeg", [
+        "-y",
+        "-i", mp3Path,
+        wavPath
+      ]);
+
+      ffmpeg.on("close", (ffCode) => {
+
+        if (ffCode !== 0) {
+          return message.reply("❌ Dönüştürme hatası.");
+        }
+
+        // 3️⃣ çal
+        const connection = joinVoiceChannel({
+          channelId: VOICE_CHANNEL_ID,
+          guildId: GUILD_ID,
+          adapterCreator: client.voice.adapters.get(GUILD_ID)
+        });
+
+        const player = createAudioPlayer();
+        const resource = createAudioResource(wavPath);
+
+        player.play(resource);
+        connection.subscribe(player);
+
+        player.on(AudioPlayerStatus.Playing, () => {
+          console.log("🎵 Çalıyor!");
+        });
+
+        player.on("idle", () => {
+          fs.unlinkSync(mp3Path);
+          fs.unlinkSync(wavPath);
+        });
+
+        player.on("error", console.error);
+
+        message.reply("🎶 Çalıyor...");
+      });
     });
-
-    const player = createAudioPlayer();
-
-    // SADECE URL VER
-    const resource = createAudioResource(args[0]);
-
-    player.play(resource);
-    connection.subscribe(player);
-
-    player.on(AudioPlayerStatus.Playing, () => {
-      console.log("🎵 Çalıyor!");
-    });
-
-    player.on("error", console.error);
-
-    message.reply("🎶 Çalıyor...");
   }
 };
