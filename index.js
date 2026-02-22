@@ -1,7 +1,12 @@
-console.log("ENV TOKEN:", process.env.TOKEN);
 require("dotenv").config();
 const { Client } = require("@jubbio/core");
 const playCommand = require("./commands/play");
+
+// 🔥 TOKEN kontrolü
+if (!process.env.TOKEN) {
+  console.error("❌ TOKEN bulunamadı! Railway Variables kısmına TOKEN ekle.");
+  process.exit(1);
+}
 
 const client = new Client({
   intents: [
@@ -13,10 +18,11 @@ const client = new Client({
 });
 
 client.on("ready", () => {
-  console.log(`${client.user.username} aktif!`);
+  console.log(`✅ ${client.user.username} giriş yaptı ve aktif!`);
 });
 
 client.on("messageCreate", async (message) => {
+  if (!message.content) return;
   if (message.author.bot) return;
   if (!message.content.startsWith("!")) return;
 
@@ -24,8 +30,20 @@ client.on("messageCreate", async (message) => {
   const command = args.shift().toLowerCase();
 
   if (command === "play") {
-    playCommand.execute(client, message, args);
+    try {
+      await playCommand.execute(client, message, args);
+    } catch (err) {
+      console.error("Komut hatası:", err);
+      message.reply("❌ Komut çalıştırılırken hata oluştu.");
+    }
   }
 });
 
-client.login(process.env.TOKEN);
+// 🔥 Login
+client.login(process.env.TOKEN)
+  .then(() => {
+    console.log("🔐 Login isteği gönderildi...");
+  })
+  .catch((err) => {
+    console.error("❌ Login hatası:", err);
+  });
