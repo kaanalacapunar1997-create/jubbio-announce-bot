@@ -1,6 +1,3 @@
-console.log("AUTHOR:", message.author);
-console.log("MEMBER:", message.member);
-console.log("VOICE FIELD:", message.voice_channel_id);
 const { 
   joinVoiceChannel, 
   createAudioPlayer, 
@@ -20,7 +17,10 @@ module.exports = {
       if (!url) return message.reply("Link gir.");
 
       // 🔥 Jubbio'da voice channel id genelde burada olur
-      const voiceChannelId = message.voice_channel_id || message.member?.voice_channel_id;
+      const voiceChannelId =
+        message.member?.voice_channel_id ||
+        message.voice_channel_id ||
+        message.author?.voice_channel_id;
 
       if (!voiceChannelId)
         return message.reply("Odaya gir.");
