@@ -1,11 +1,6 @@
 const { spawn } = require("child_process");
-const fs = require("fs");
-const path = require("path");
 const { 
-  joinVoiceChannel,
-  createAudioPlayer,
-  createAudioResource,
-  AudioPlayerStatus
+  joinVoiceChannel
 } = require("@jubbio/voice");
 
 module.exports = {
@@ -13,71 +8,37 @@ module.exports = {
 
   async execute(client, message, args) {
 
-    if (!args[0]) {
-      return message.reply("❌ Link gir.");
-    }
-
-    const VOICE_CHANNEL_ID = "546336747034783744";
+    const VOICE_CHANNEL_ID = "546336747034783744"; // SENİN ODA
     const GUILD_ID = message.guildId;
 
-    const mp3Path = path.join(__dirname, "song.mp3");
-    const wavPath = path.join(__dirname, "song.wav");
+    // Önce kanala gir
+    const connection = joinVoiceChannel({
+      channelId: VOICE_CHANNEL_ID,
+      guildId: GUILD_ID,
+      adapterCreator: client.voice.adapters.get(GUILD_ID)
+    });
 
-    message.reply("⬇️ İndiriliyor...");
+    message.reply("🔊 Odaya girdim. yt-dlp test ediliyor...");
 
-    const ytdlp = spawn("yt-dlp", [
-      "-f", "bestaudio",
-      "-o", mp3Path,
-      args[0]
-    ]);
+    // yt-dlp var mı test et
+    const ytdlp = spawn("yt-dlp", ["--version"]);
 
-    ytdlp.on("close", (code) => {
+    ytdlp.stdout.on("data", data => {
+      console.log("STDOUT:", data.toString());
+    });
 
-      if (code !== 0) {
-        return message.reply("❌ İndirme hatası.");
-      }
+    ytdlp.stderr.on("data", data => {
+      console.log("STDERR:", data.toString());
+    });
 
-      // 🔥 BURASI ÖNEMLİ
-      const ffmpeg = spawn("ffmpeg", [
-        "-y",
-        "-i", mp3Path,
-        "-ar", "48000",     // 48kHz
-        "-ac", "2",         // stereo
-        "-f", "wav",
-        wavPath
-      ]);
+    ytdlp.on("close", code => {
+      console.log("EXIT CODE:", code);
+      message.reply("yt-dlp exit code: " + code);
+    });
 
-      ffmpeg.on("close", (ffCode) => {
-
-        if (ffCode !== 0) {
-          return message.reply("❌ Dönüştürme hatası.");
-        }
-
-        const connection = joinVoiceChannel({
-          channelId: VOICE_CHANNEL_ID,
-          guildId: GUILD_ID,
-          adapterCreator: client.voice.adapters.get(GUILD_ID)
-        });
-
-        const player = createAudioPlayer();
-        const resource = createAudioResource(wavPath);
-
-        player.play(resource);
-        connection.subscribe(player);
-
-        player.on(AudioPlayerStatus.Playing, () => {
-          console.log("🎵 Çalıyor!");
-        });
-
-        player.on("idle", () => {
-          fs.unlinkSync(mp3Path);
-          fs.unlinkSync(wavPath);
-        });
-
-        player.on("error", console.error);
-
-        message.reply("🎶 Çalıyor...");
-      });
+    ytdlp.on("error", err => {
+      console.log("SPAWN ERROR:", err);
+      message.reply("yt-dlp spawn error!");
     });
   }
 };
