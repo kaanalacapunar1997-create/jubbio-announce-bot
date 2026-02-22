@@ -7,18 +7,12 @@ const {
 const path = require("path");
 const fs = require("fs");
 
+const VOICE_CHANNEL_ID = "546336747034783744";
+
 module.exports = {
   name: "play",
 
   async execute(client, message, args) {
-
-    // 🔥 ESKİ ÇALIŞAN YÖNTEM — voiceStates cache
-    const voiceState = client.voiceStates.get(message.author.id);
-    const voiceChannelId = voiceState?.channel_id;
-
-    if (!voiceChannelId) {
-      return message.reply("Odaya gir.");
-    }
 
     const url = args[0];
     if (!url) {
@@ -48,7 +42,7 @@ module.exports = {
       }
 
       const connection = joinVoiceChannel({
-        channelId: voiceChannelId,
+        channelId: VOICE_CHANNEL_ID,
         guildId: message.guild_id,
         adapterCreator: message.guild.voiceAdapterCreator
       });
