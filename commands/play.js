@@ -16,26 +16,22 @@ module.exports = {
       const url = args[0];
       if (!url) return message.reply("Link gir.");
 
-      // ✅ Kullanıcının voice durumunu client cache'ten al
-      const voiceState = client.voiceStates?.get(message.author.id);
-      const voiceChannelId = voiceState?.channel_id;
+      // 🔥 Jubbio'da voice channel id genelde burada olur
+      const voiceChannelId = message.voice_channel_id || message.member?.voice_channel_id;
 
       if (!voiceChannelId)
         return message.reply("Odaya gir.");
 
-      // ✅ Voice kanalına bağlan
       const connection = joinVoiceChannel({
         channelId: voiceChannelId,
         guildId: message.guild_id,
-        adapterCreator: client.voiceAdapterCreator
+        adapterCreator: client.voice.adapters.get(message.guild_id)
       });
 
       const player = createAudioPlayer();
 
-      // ✅ yt-dlp stream
       const ytdlp = spawn("yt-dlp", ["-f", "bestaudio", "-o", "-", url]);
 
-      // ✅ ffmpeg → opus output
       const ffmpeg = spawn("ffmpeg", [
         "-i", "pipe:0",
         "-f", "opus",

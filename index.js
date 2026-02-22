@@ -3,6 +3,7 @@ require("dotenv").config();
 const { Client, GatewayIntentBits, Collection } = require("@jubbio/core");
 const fs = require("fs");
 const path = require("path");
+const http = require("http");
 
 // 🔥 CLIENT OLUŞTUR
 const client = new Client({
@@ -14,17 +15,6 @@ const client = new Client({
   ]
 });
 
-// 🔥 Voice state cache
-client.voiceStates = new Map();
-
-client.on("voiceStateUpdate", (data) => {
-  client.voiceStates.set(data.user_id, data);
-});
-
-// 🔥 GLOBAL MUSIC DEĞİŞKENLERİ
-client.musicPlayer = null;
-client.musicConnection = null;
-
 // 🔥 KOMUTLARI YÜKLE
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, "commands");
@@ -35,14 +25,20 @@ for (const file of commandFiles) {
   client.commands.set(command.name, command);
 }
 
-// 🔥 BOT READY
+// 🔥 READY EVENT
 client.once("ready", () => {
   console.log("✅ Bot hazır!");
+  
+  if (client.voice && client.voice.adapters) {
+    console.log("🎧 Voice adapters:", client.voice.adapters);
+  } else {
+    console.log("❌ Voice adapters bulunamadı!");
+  }
 });
 
 // 🔥 MESAJ EVENT
 client.on("messageCreate", async (message) => {
-  if (message.author.bot) return;
+  if (!message.content) return;
   if (!message.content.startsWith("!")) return;
 
   const args = message.content.slice(1).trim().split(/ +/);
@@ -63,8 +59,6 @@ client.on("messageCreate", async (message) => {
 client.login(process.env.TOKEN);
 
 // 🔥 Railway uyku engelleyici mini server
-const http = require("http");
-
 http.createServer((req, res) => {
   res.writeHead(200);
   res.end("Bot aktif.");
