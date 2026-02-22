@@ -10,11 +10,18 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildVoiceStates
+    GatewayIntentBits.GuildVoiceStates // ✅ Voice intent açık
   ]
 });
 
-// 🔥 GLOBAL MUSIC DEĞİŞKENLERİ (Client oluştuktan sonra!)
+// 🔥 Voice state cache
+client.voiceStates = new Map();
+
+client.on("VOICE_STATE_UPDATE", (data) => {
+  client.voiceStates.set(data.user_id, data);
+});
+
+// 🔥 GLOBAL MUSIC DEĞİŞKENLERİ
 client.musicPlayer = null;
 client.musicConnection = null;
 
@@ -31,7 +38,6 @@ for (const file of commandFiles) {
 // 🔥 BOT READY
 client.once("ready", () => {
   console.log("✅ Bot hazır!");
-  console.log("Voice adapters:", client.voice.adapters);
 });
 
 // 🔥 MESAJ EVENT
@@ -53,9 +59,10 @@ client.on("messageCreate", async (message) => {
   }
 });
 
-// 🔥 LOGIN (Railway için)
+// 🔥 LOGIN
 client.login(process.env.TOKEN);
-// Railway uyku engelleyici mini server
+
+// 🔥 Railway uyku engelleyici mini server
 const http = require("http");
 
 http.createServer((req, res) => {
