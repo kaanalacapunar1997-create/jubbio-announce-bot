@@ -7,7 +7,11 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     curl \
-    && pip3 install yt-dlp \
+  RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    yt-dlp \
+    curl \
+    && apt-get clean 
     && apt-get clean
 
 COPY package*.json ./
