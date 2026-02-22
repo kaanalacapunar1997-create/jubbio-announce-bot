@@ -1,3 +1,4 @@
+console.log(message);
 const { 
   joinVoiceChannel, 
   createAudioPlayer, 
@@ -17,9 +18,11 @@ module.exports = {
       if (!url) return message.reply("Link gir.");
 
       // ✅ JUBBIO voice channel id
-      const voiceChannelId = message.member?.voice_channel_id;
-      if (!voiceChannelId)
-        return message.reply("Odaya gir.");
+      const voiceState = client.voiceStates.get(message.author.id);
+const voiceChannelId = voiceState?.channel_id;
+
+if (!voiceChannelId)
+  return message.reply("Odaya gir.");
 
       const connection = joinVoiceChannel({
         channelId: voiceChannelId,
