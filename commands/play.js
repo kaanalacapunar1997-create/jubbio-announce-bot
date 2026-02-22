@@ -7,6 +7,9 @@ const {
 
 const { spawn } = require("child_process");
 
+// 🔥 SABİT ODA ID
+const MUSIC_CHANNEL_ID = "546336747034783744";
+
 module.exports = {
   name: "play",
   async execute(client, message, args) {
@@ -14,13 +17,8 @@ module.exports = {
     const url = args[0];
     if (!url) return message.reply("Link gir.");
 
-    const voiceChannelId = client.userVoiceChannels.get(message.author.id);
-
-    if (!voiceChannelId)
-      return message.reply("Odaya gir.");
-
     const connection = joinVoiceChannel({
-      channelId: voiceChannelId,
+      channelId: MUSIC_CHANNEL_ID,
       guildId: message.guildId,
       adapterCreator: client.voice.adapters.get(message.guildId)
     });
@@ -46,6 +44,6 @@ module.exports = {
     connection.subscribe(player);
     player.play(resource);
 
-    message.reply("🎵 Çalıyor...");
+    message.reply("🎵 Müzik başlatıldı.");
   }
 };
