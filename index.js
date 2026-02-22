@@ -17,7 +17,7 @@ const client = new Client({
 // 🔥 Voice state cache
 client.voiceStates = new Map();
 
-client.on("VOICE_STATE_UPDATE", (data) => {
+client.on("voiceStateUpdate", (data) => {
   client.voiceStates.set(data.user_id, data);
 });
 
