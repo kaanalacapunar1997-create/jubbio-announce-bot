@@ -1,46 +1,49 @@
-const { 
-  joinVoiceChannel,
-  createAudioPlayer,
-  createAudioResource,
-  AudioPlayerStatus,
-  StreamType
-} = require("@jubbio/voice");
-
-const MUSIC_CHANNEL_ID = "546336747034783744"; // 👈 değiştir
+const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus } = require("@jubbio/voice");
+const { spawn } = require("child_process");
 
 module.exports = {
   name: "play",
-
   async execute(client, message, args) {
 
-    if (!args[0]) {
-      return message.reply("❌ Link gir.");
-    }
+    const url = args[0];
+    if (!url) return message.reply("Link gir.");
 
+    const voiceChannel = message.member.voice.channel;
+    if (!voiceChannel) return message.reply("Odaya gir.");
+
+    // 1️⃣ Bağlan
     const connection = joinVoiceChannel({
-      channelId: MUSIC_CHANNEL_ID,
-      guildId: message.guildId,
-      adapterCreator: client.voice.adapters.get(message.guildId)
+      channelId: voiceChannel.id,
+      guildId: message.guild.id,
+      adapterCreator: message.guild.voiceAdapterCreator
     });
 
+    // 2️⃣ Player oluştur
     const player = createAudioPlayer();
 
-    client.musicPlayer = player;
-    client.musicConnection = connection;
+    // 3️⃣ yt-dlp + ffmpeg stream
+    const ytdlp = spawn("yt-dlp", ["-f", "bestaudio", "-o", "-", url]);
+    const ffmpeg = spawn("ffmpeg", [
+      "-i", "pipe:0",
+      "-f", "s16le",
+      "-ar", "48000",
+      "-ac", "2",
+      "pipe:1"
+    ]);
 
-    const resource = createAudioResource(args[0], {
-      inputType: StreamType.Raw
+    ytdlp.stdout.pipe(ffmpeg.stdin);
+
+    // 4️⃣ Resource oluştur
+    const resource = createAudioResource(ffmpeg.stdout, {
+      inlineVolume: true
     });
 
-    player.play(resource);
+    // 5️⃣ Subscribe OLMAZSA SES GELMEZ
     connection.subscribe(player);
 
-    player.on(AudioPlayerStatus.Playing, () => {
-      console.log("🎵 Çalıyor!");
-    });
+    // 6️⃣ Çal
+    player.play(resource);
 
-    player.on("error", console.error);
-
-    message.reply("🎶 Çalmaya başladım!");
+    message.reply("Çalıyor...");
   }
 };
