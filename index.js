@@ -1,3 +1,4 @@
+console.log("ENV TOKEN:", process.env.TOKEN);
 require("dotenv").config();
 const { Client } = require("@jubbio/core");
 const playCommand = require("./commands/play");
