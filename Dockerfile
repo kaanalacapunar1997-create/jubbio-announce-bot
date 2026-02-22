@@ -6,6 +6,8 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     yt-dlp \
     curl \
+    libopus-dev \
+    libsodium-dev \
     && apt-get clean
 
 COPY package*.json ./
