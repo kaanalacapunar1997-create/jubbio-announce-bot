@@ -5,7 +5,6 @@ const {
 } = require("@jubbio/voice");
 
 const { spawn } = require("child_process");
-const fs = require("fs");
 
 const MUSIC_CHANNEL_ID = "546336747034783744";
 
@@ -20,7 +19,6 @@ module.exports = {
 
     const outputFile = "/tmp/music.mp3";
 
-    // yt-dlp ile mp3 indir
     const ytdlp = spawn("yt-dlp", [
       "-f", "bestaudio",
       "-x",
@@ -29,7 +27,12 @@ module.exports = {
       url
     ]);
 
+    ytdlp.stderr.on("data", data => {
+      console.log("yt-dlp:", data.toString());
+    });
+
     ytdlp.on("close", (code) => {
+
       if (code !== 0) {
         return message.reply("İndirme hatası.");
       }
@@ -41,7 +44,6 @@ module.exports = {
       });
 
       const player = createAudioPlayer();
-
       const resource = createAudioResource(outputFile);
 
       connection.subscribe(player);
@@ -51,6 +53,3 @@ module.exports = {
     });
   }
 };
-ytdlp.stderr.on("data", data => {
-  console.log("yt-dlp error:", data.toString());
-});
