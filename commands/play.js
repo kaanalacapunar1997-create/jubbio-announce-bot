@@ -1,3 +1,6 @@
+console.log("AUTHOR:", message.author);
+console.log("MEMBER:", message.member);
+console.log("VOICE FIELD:", message.voice_channel_id);
 const { 
   joinVoiceChannel, 
   createAudioPlayer, 
