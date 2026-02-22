@@ -51,3 +51,6 @@ module.exports = {
     });
   }
 };
+ytdlp.stderr.on("data", data => {
+  console.log("yt-dlp error:", data.toString());
+});
