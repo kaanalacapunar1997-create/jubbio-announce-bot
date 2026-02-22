@@ -25,18 +25,39 @@ module.exports = {
 
     message.reply("⬇️ İndiriliyor...");
 
+    // 🔥 yt-dlp başlat
     const ytdlp = spawn("yt-dlp", [
       "-f", "bestaudio",
+      "--no-playlist",
       "-o", mp3Path,
       args[0]
     ]);
 
+    // 🔥 DEBUG ÇIKTILARI
+    ytdlp.stdout.on("data", data => {
+      console.log("YTDLP STDOUT:", data.toString());
+    });
+
+    ytdlp.stderr.on("data", data => {
+      console.log("YTDLP STDERR:", data.toString());
+    });
+
+    ytdlp.on("error", err => {
+      console.log("YTDLP SPAWN ERROR:", err);
+      message.reply("❌ yt-dlp spawn error");
+    });
+
     ytdlp.on("close", (code) => {
+
+      console.log("YTDLP EXIT CODE:", code);
 
       if (code !== 0) {
         return message.reply("❌ İndirme hatası.");
       }
 
+      console.log("MP3 indirildi.");
+
+      // 🔥 WAV'a çevir
       const ffmpeg = spawn("ffmpeg", [
         "-y",
         "-i", mp3Path,
@@ -45,11 +66,19 @@ module.exports = {
         wavPath
       ]);
 
+      ffmpeg.stderr.on("data", data => {
+        console.log("FFMPEG STDERR:", data.toString());
+      });
+
       ffmpeg.on("close", (ffCode) => {
+
+        console.log("FFMPEG EXIT CODE:", ffCode);
 
         if (ffCode !== 0) {
           return message.reply("❌ Dönüştürme hatası.");
         }
+
+        console.log("WAV hazır.");
 
         const connection = joinVoiceChannel({
           channelId: VOICE_CHANNEL_ID,
@@ -68,11 +97,16 @@ module.exports = {
         });
 
         player.on("idle", () => {
-          fs.unlinkSync(mp3Path);
-          fs.unlinkSync(wavPath);
+          console.log("Bitti, dosyalar siliniyor.");
+          try {
+            fs.unlinkSync(mp3Path);
+            fs.unlinkSync(wavPath);
+          } catch {}
         });
 
-        player.on("error", console.error);
+        player.on("error", err => {
+          console.log("PLAYER ERROR:", err);
+        });
 
         message.reply("🎶 Çalıyor...");
       });
