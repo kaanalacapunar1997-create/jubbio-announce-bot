@@ -14,9 +14,7 @@ module.exports = {
     const url = args[0];
     if (!url) return message.reply("Link gir.");
 
-    // 🔥 JUBBIO DOĞRU YÖNTEM
-    const voiceState = client.voiceStates.get(message.author.id);
-    const voiceChannelId = voiceState?.channel_id;
+    const voiceChannelId = client.userVoiceChannels.get(message.author.id);
 
     if (!voiceChannelId)
       return message.reply("Odaya gir.");

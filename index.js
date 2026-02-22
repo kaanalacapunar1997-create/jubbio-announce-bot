@@ -11,17 +11,25 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildVoiceStates // ⚠️ Voice intent açık olmalı
+    GatewayIntentBits.GuildVoiceStates
   ]
 });
 
-// 🔥 VOICE STATE CACHE
-client.voiceStates = new Map();
+// 🔥 GLOBAL MÜZİK DEĞİŞKENLERİ
+client.musicPlayer = null;
+client.musicConnection = null;
 
-// Voice event debug
-client.on("voiceStateUpdate", (state) => {
-  console.log("🎧 VOICE EVENT GELDİ:", state);
-  client.voiceStates.set(state.user_id, state);
+// 🔥 VOICE MAP (EN KRİTİK KISIM)
+client.userVoiceChannels = new Map();
+
+client.on("voiceStateUpdate", (oldState, newState) => {
+  if (!newState.user_id) return;
+
+  if (newState.channel_id) {
+    client.userVoiceChannels.set(newState.user_id, newState.channel_id);
+  } else {
+    client.userVoiceChannels.delete(newState.user_id);
+  }
 });
 
 // 🔥 KOMUTLARI YÜKLE
@@ -34,7 +42,7 @@ for (const file of commandFiles) {
   client.commands.set(command.name, command);
 }
 
-// 🔥 READY EVENT
+// 🔥 READY
 client.once("ready", () => {
   console.log("✅ Bot hazır!");
   console.log("🎧 Voice adapters:", client.voice.adapters);
@@ -42,7 +50,7 @@ client.once("ready", () => {
 
 // 🔥 MESAJ EVENT
 client.on("messageCreate", async (message) => {
-  if (!message.content) return;
+  if (message.author.bot) return;
   if (!message.content.startsWith("!")) return;
 
   const args = message.content.slice(1).trim().split(/ +/);
@@ -62,8 +70,8 @@ client.on("messageCreate", async (message) => {
 // 🔥 LOGIN
 client.login(process.env.TOKEN);
 
-// 🔥 Railway mini server
+// 🔥 Railway uyku engelleme server
 http.createServer((req, res) => {
   res.writeHead(200);
   res.end("Bot aktif.");
-}).listen(3000);
+}).listen(process.env.PORT || 3000);
