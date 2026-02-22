@@ -16,15 +16,14 @@ module.exports = {
       const url = args[0];
       if (!url) return message.reply("Link gir.");
 
-      // 🔥 Jubbio'da voice channel id genelde burada olur
-      const voiceChannelId =
-        message.member?.voice_channel_id ||
-        message.voice_channel_id ||
-        message.author?.voice_channel_id;
+      // ✅ Voice state cache'ten al
+      const voiceState = client.voiceStates.get(message.author.id);
+      const voiceChannelId = voiceState?.channel_id;
 
       if (!voiceChannelId)
         return message.reply("Odaya gir.");
 
+      // ✅ Voice kanalına bağlan
       const connection = joinVoiceChannel({
         channelId: voiceChannelId,
         guildId: message.guild_id,
@@ -33,8 +32,10 @@ module.exports = {
 
       const player = createAudioPlayer();
 
+      // ✅ yt-dlp
       const ytdlp = spawn("yt-dlp", ["-f", "bestaudio", "-o", "-", url]);
 
+      // ✅ ffmpeg -> opus
       const ffmpeg = spawn("ffmpeg", [
         "-i", "pipe:0",
         "-f", "opus",
