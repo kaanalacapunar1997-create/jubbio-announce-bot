@@ -14,7 +14,7 @@ module.exports = {
     const url = args[0];
     if (!url) return message.reply("Link gir.");
 
-    const voiceChannel = message.member.voice.channel;
+   const voiceChannel = message.author.voice?.channel;
     if (!voiceChannel) return message.reply("Odaya gir.");
 
     const connection = joinVoiceChannel({
