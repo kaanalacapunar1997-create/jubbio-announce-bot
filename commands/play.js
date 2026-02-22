@@ -11,40 +11,54 @@ module.exports = {
   name: "play",
   async execute(client, message, args) {
 
-    const url = args[0];
-    if (!url) return message.reply("Link gir.");
+    try {
 
-   const voiceChannel = message.author.voice?.channel;
-    if (!voiceChannel) return message.reply("Odaya gir.");
+      const url = args[0];
+      if (!url) return message.reply("Link gir.");
 
-    const connection = joinVoiceChannel({
-      channelId: voiceChannel.id,
-      guildId: message.guild.id,
-      adapterCreator: message.guild.voiceAdapterCreator
-    });
+      // ✅ Guild member'ı fetch et
+      const member = await message.guild.members.fetch(message.author.id);
+      const voiceChannel = member.voice?.channel;
 
-    const player = createAudioPlayer();
+      if (!voiceChannel) 
+        return message.reply("Odaya gir.");
 
-    const ytdlp = spawn("yt-dlp", ["-f", "bestaudio", "-o", "-", url]);
+      // ✅ Bağlan
+      const connection = joinVoiceChannel({
+        channelId: voiceChannel.id,
+        guildId: message.guild.id,
+        adapterCreator: message.guild.voiceAdapterCreator
+      });
 
-    const ffmpeg = spawn("ffmpeg", [
-      "-i", "pipe:0",
-      "-f", "opus",          // 🔥 BURASI DEĞİŞTİ
-      "-ar", "48000",
-      "-ac", "2",
-      "pipe:1"
-    ]);
+      const player = createAudioPlayer();
 
-    ytdlp.stdout.pipe(ffmpeg.stdin);
+      // ✅ yt-dlp stream
+      const ytdlp = spawn("yt-dlp", ["-f", "bestaudio", "-o", "-", url]);
 
-    const resource = createAudioResource(ffmpeg.stdout, {
-      inputType: StreamType.Opus,  // 🔥 EN KRİTİK SATIR
-      inlineVolume: true
-    });
+      // ✅ ffmpeg opus output
+      const ffmpeg = spawn("ffmpeg", [
+        "-i", "pipe:0",
+        "-f", "opus",
+        "-ar", "48000",
+        "-ac", "2",
+        "pipe:1"
+      ]);
 
-    connection.subscribe(player);
-    player.play(resource);
+      ytdlp.stdout.pipe(ffmpeg.stdin);
 
-    message.reply("Çalıyor...");
+      const resource = createAudioResource(ffmpeg.stdout, {
+        inputType: StreamType.Opus,
+        inlineVolume: true
+      });
+
+      connection.subscribe(player);
+      player.play(resource);
+
+      message.reply("Çalıyor...");
+
+    } catch (err) {
+      console.error(err);
+      message.reply("❌ Komut çalıştırılırken hata oluştu.");
+    }
   }
 };
