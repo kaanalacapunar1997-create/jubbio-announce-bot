@@ -25,15 +25,15 @@ module.exports = {
 
     message.reply("⬇️ İndiriliyor...");
 
-    // 🔥 yt-dlp başlat
+    // 🔥 YOUTUBE BLOCK FIX
     const ytdlp = spawn("yt-dlp", [
       "-f", "bestaudio",
       "--no-playlist",
+      "--extractor-args", "youtube:player_client=android",
       "-o", mp3Path,
       args[0]
     ]);
 
-    // 🔥 DEBUG ÇIKTILARI
     ytdlp.stdout.on("data", data => {
       console.log("YTDLP STDOUT:", data.toString());
     });
@@ -57,7 +57,6 @@ module.exports = {
 
       console.log("MP3 indirildi.");
 
-      // 🔥 WAV'a çevir
       const ffmpeg = spawn("ffmpeg", [
         "-y",
         "-i", mp3Path,
@@ -97,7 +96,6 @@ module.exports = {
         });
 
         player.on("idle", () => {
-          console.log("Bitti, dosyalar siliniyor.");
           try {
             fs.unlinkSync(mp3Path);
             fs.unlinkSync(wavPath);
