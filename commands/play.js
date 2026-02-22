@@ -1,4 +1,3 @@
-console.log(message);
 const { 
   joinVoiceChannel, 
   createAudioPlayer, 
@@ -17,13 +16,14 @@ module.exports = {
       const url = args[0];
       if (!url) return message.reply("Link gir.");
 
-      // ✅ JUBBIO voice channel id
-      const voiceState = client.voiceStates.get(message.author.id);
-const voiceChannelId = voiceState?.channel_id;
+      // ✅ Kullanıcının voice durumunu client cache'ten al
+      const voiceState = client.voiceStates?.get(message.author.id);
+      const voiceChannelId = voiceState?.channel_id;
 
-if (!voiceChannelId)
-  return message.reply("Odaya gir.");
+      if (!voiceChannelId)
+        return message.reply("Odaya gir.");
 
+      // ✅ Voice kanalına bağlan
       const connection = joinVoiceChannel({
         channelId: voiceChannelId,
         guildId: message.guild_id,
@@ -32,8 +32,10 @@ if (!voiceChannelId)
 
       const player = createAudioPlayer();
 
+      // ✅ yt-dlp stream
       const ytdlp = spawn("yt-dlp", ["-f", "bestaudio", "-o", "-", url]);
 
+      // ✅ ffmpeg → opus output
       const ffmpeg = spawn("ffmpeg", [
         "-i", "pipe:0",
         "-f", "opus",
