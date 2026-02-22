@@ -55,3 +55,10 @@ client.on("messageCreate", async (message) => {
 
 // 🔥 LOGIN (Railway için)
 client.login(process.env.TOKEN);
+// Railway uyku engelleyici mini server
+const http = require("http");
+
+http.createServer((req, res) => {
+  res.writeHead(200);
+  res.end("Bot aktif.");
+}).listen(process.env.PORT || 3000);
