@@ -54,4 +54,4 @@ client.on("messageCreate", async (message) => {
 });
 
 // 🔥 LOGIN (Railway için)
-client.login(process.env.BOT_TOKEN);
+client.login(process.env.TOKEN);
