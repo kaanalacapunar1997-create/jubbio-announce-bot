@@ -1,3 +1,4 @@
+const { spawn } = require("child_process");
 const { 
   joinVoiceChannel,
   createAudioPlayer,
@@ -15,30 +16,42 @@ module.exports = {
       return message.reply("❌ Link gir.");
     }
 
-    const VOICE_CHANNEL_ID = "546336747034783744";
+    const VOICE_CHANNEL_ID = "546336747034783744"; // SENİN ODA ID
+    const GUILD_ID = message.guildId;
 
     const connection = joinVoiceChannel({
       channelId: VOICE_CHANNEL_ID,
-      guildId: message.guildId,
-      adapterCreator: client.voice.adapters.get(message.guildId)
+      guildId: GUILD_ID,
+      adapterCreator: client.voice.adapters.get(GUILD_ID)
     });
 
     const player = createAudioPlayer();
 
-    const resource = createAudioResource(args[0], {
-      inputType: StreamType.Raw,
-      inlineVolume: false
+    const ytdlp = spawn("yt-dlp", [
+      "-f", "bestaudio",
+      "-o", "-",
+      args[0]
+    ]);
+
+    ytdlp.stderr.on("data", data => {
+      console.log("yt-dlp:", data.toString());
+    });
+
+    const resource = createAudioResource(ytdlp.stdout, {
+      inputType: StreamType.Arbitrary
     });
 
     player.play(resource);
     connection.subscribe(player);
 
     player.on(AudioPlayerStatus.Playing, () => {
-      console.log("🎵 RAW PCM Çalıyor!");
+      console.log("🎵 Çalıyor!");
     });
 
-    player.on("error", console.error);
+    player.on("error", (err) => {
+      console.error("Player error:", err);
+    });
 
-    message.reply("🎶 RAW mod test...");
+    message.reply("🎶 Çalıyor...");
   }
 };
