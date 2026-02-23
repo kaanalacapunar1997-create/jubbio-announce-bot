@@ -69,10 +69,10 @@ module.exports = {
           titleProc.on("close", () => resolve(out.trim() || "Bilinmeyen"));
         });
 
-        // yt-dlp ile direkt ses URL'ini al
+        // yt-dlp ile direkt ses URL'ini al (HLS değil, direkt m4a/webm)
         const audioUrl = await new Promise((resolve, reject) => {
           const proc = spawn("yt-dlp", [
-            "-f", "bestaudio",
+            "-f", "140/bestaudio[protocol!=m3u8][protocol!=m3u8_native]",
             "--no-playlist",
             "--get-url",
             videoUrl
