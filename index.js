@@ -61,3 +61,4 @@ client.once("ready", () => {
 });
 
 client.login(process.env.BOT_TOKEN);
+console.log("TOKEN:", process.env.BOT_TOKEN);
