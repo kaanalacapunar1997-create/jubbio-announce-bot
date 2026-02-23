@@ -5,21 +5,22 @@ module.exports = {
 
     const helpMessage = `
 🎵 **Müzik Komutları**
-\`!play <mp3 link>\` → Müzik çalar
-\`!pause\` → Müziği duraklatır
-\`!resume\` → Müziği devam ettirir
-\`!stop\` → Müziği tamamen durdurur
-\`!skip\` → Sıradaki şarkıya geçer
-\`!leave\` → Ses kanalından çıkar
+
+!play <mp3 link> → Müzik çalar
+!pause → Müziği duraklatır
+!resume → Müziği devam ettirir
+!stop → Müziği tamamen durdurur
+!leave → Ses kanalından çıkar
 
 👑 **Rol Komutları**
-\`!roller\` → Özel rolleri oluşturur
-\`!rol <kullanıcıID> <rolID>\` → Kullanıcıya rol verir
 
-⚙️ **Diğer Komutlar**
-\`!ping\` → Bot gecikmesini gösterir
-\`!kur\` → Sistem kurulumunu yapar
-\`!yardim\` → Bu menüyü gösterir
+!rol <kullanıcıID> <rolID> → Kullanıcıya rol verir
+!roller → Özel rolleri oluşturur
+
+⚙️ **Diğer**
+
+!ping → Bot gecikmesini gösterir
+!yardim → Bu menüyü gösterir
 `;
 
     message.reply(helpMessage);
