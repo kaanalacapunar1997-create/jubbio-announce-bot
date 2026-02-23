@@ -3,27 +3,32 @@ module.exports = {
 
   async execute(client, message, args) {
 
-    if (!args[0]) {
-      return message.reply("❌ Kullanıcı ID yaz.");
+    if (args.length < 2) {
+      return message.reply("Kullanım: !rol <kullanıcıID> <RolAdı>");
     }
 
-    if (!args[1]) {
-      return message.reply("❌ Rol ID yaz.");
-    }
+    const guild = client.guilds.cache.get(message.guildId);
+    if (!guild) return message.reply("❌ Sunucu bulunamadı.");
 
     const userId = args[0];
-    const roleId = args[1];
+    const roleName = args.slice(1).join(" ");
 
     try {
+      // Rolleri REST ile çekiyoruz (cache yerine)
+      const roles = await client.rest.getGuildRoles(message.guildId);
+      const role = roles.find(r => r.name === roleName);
+
+      if (!role) {
+        return message.reply("❌ Böyle bir rol bulunamadı.");
+      }
 
       await client.rest.addGuildMemberRole(
         message.guildId,
         userId,
-        roleId
+        role.id
       );
 
-      message.reply("✅ Rol başarıyla verildi.");
-
+      message.reply(`✅ ${roleName} rolü başarıyla verildi.`);
     } catch (err) {
       console.error("ROL HATA:", err);
       message.reply("❌ Rol verilemedi.");
