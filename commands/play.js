@@ -23,13 +23,12 @@ module.exports = {
       return message.reply("❌ Geçerli bir SoundCloud track linki değil.");
     }
 
-    // Member fetch fix
-    const member = await message.guild.members.fetch(message.author.id);
-    const channel = member.voice?.channel;
-
-    if (!channel) {
+    // Güvenli voice kontrolü
+    if (!message.member || !message.member.voice || !message.member.voice.channel) {
       return message.reply("❌ Önce bir ses kanalına gir.");
     }
+
+    const channel = message.member.voice.channel;
 
     if (!client.music) client.music = {};
 
