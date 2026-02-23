@@ -4,13 +4,12 @@ module.exports = {
   async execute(client, message) {
 
     const musicData = client.music?.[message.guildId];
-    if (!musicData) return message.reply("❌ Çalan müzik yok.");
 
-    musicData.queue = [];
+    if (!musicData || !musicData.player) {
+      return message.reply("❌ Çalan müzik yok.");
+    }
+
     musicData.player.stop();
-    musicData.connection.destroy();
-
-    delete client.music[message.guildId];
 
     message.reply("⏹️ Müzik durduruldu.");
   }
