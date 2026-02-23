@@ -1,18 +1,20 @@
 {
-  "name": "jubbio-level-bot",
+  "name": "jubbio-bot",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@jubbio/core": "^1.1.10",
+    "@jubbio/core": "^1.1.8",
+    "@jubbio/voice": "^1.0.9",
+    "@distube/ytdl-core": "^4.16.10",
     "dotenv": "^17.3.1",
-    "pg": "^8.18.0"
+    "play-dl": "^1.9.7"
   }
 }
