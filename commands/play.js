@@ -18,17 +18,21 @@ module.exports = {
 
     const url = args[0];
 
-    if (!play.so_validate(url)) {
-      return message.reply("❌ Geçerli bir SoundCloud linki değil.");
+    const validation = await play.so_validate(url);
+    if (!validation || validation !== "track") {
+      return message.reply("❌ Geçerli bir SoundCloud track linki değil.");
     }
 
-    const channel = message.member.voice.channel;
+    // Member fetch fix
+    const member = await message.guild.members.fetch(message.author.id);
+    const channel = member.voice?.channel;
+
     if (!channel) {
       return message.reply("❌ Önce bir ses kanalına gir.");
     }
 
-    // Sunucuya özel müzik objesi oluştur
     if (!client.music) client.music = {};
+
     if (!client.music[message.guildId]) {
       client.music[message.guildId] = {
         queue: [],
@@ -70,24 +74,30 @@ module.exports = {
         musicData.connection.subscribe(musicData.player);
       }
 
-      const stream = await play.stream(nextUrl);
+      try {
+        const stream = await play.stream(nextUrl);
 
-      const resource = createAudioResource(stream.stream, {
-        inputType: stream.type
-      });
+        const resource = createAudioResource(stream.stream, {
+          inputType: stream.type
+        });
 
-      musicData.player.play(resource);
+        musicData.player.play(resource);
 
-      musicData.player.once(AudioPlayerStatus.Idle, () => {
+        musicData.player.once(AudioPlayerStatus.Idle, () => {
+          playNext();
+        });
+
+        musicData.player.on("error", (err) => {
+          console.error("Player error:", err);
+          playNext();
+        });
+
+        console.log("🎵 SoundCloud çalıyor...");
+
+      } catch (err) {
+        console.error("Stream error:", err);
         playNext();
-      });
-
-      musicData.player.on("error", (err) => {
-        console.error(err);
-        playNext();
-      });
-
-      console.log("🎵 SoundCloud çalıyor...");
+      }
     }
 
     playNext();

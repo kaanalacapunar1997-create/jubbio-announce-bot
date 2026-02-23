@@ -1,8 +1,7 @@
 require("dotenv").config();
 
-const { Client, GatewayIntentBits, Collection } = require("@jubbio/core");
-const fs = require("fs");
-const path = require("path");
+const { Client, GatewayIntentBits } = require("@jubbio/core");
+const play = require("play-dl");
 
 const client = new Client({
   intents: [
@@ -13,19 +12,31 @@ const client = new Client({
   ]
 });
 
-client.commands = new Collection();
+// SoundCloud client_id otomatik al
+(async () => {
+  try {
+    const clientId = await play.getFreeClientID();
+    await play.setToken({
+      soundcloud: {
+        client_id: clientId
+      }
+    });
+    console.log("✅ SoundCloud client_id alındı");
+  } catch (err) {
+    console.error("❌ SoundCloud client_id alınamadı:", err);
+  }
+})();
 
-const commandsPath = path.join(__dirname, "commands");
-const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith(".js"));
+// Komut yükleme
+const fs = require("fs");
+client.commands = new Map();
+
+const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
 
 for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
   client.commands.set(command.name, command);
 }
-
-client.once("ready", () => {
-  console.log("✅ Bot hazır!");
-});
 
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
@@ -45,4 +56,8 @@ client.on("messageCreate", async (message) => {
   }
 });
 
-client.login(process.env.TOKEN);
+client.once("ready", () => {
+  console.log(`✅ Bot hazır! User: ${client.user.username}`);
+});
+
+client.login(process.env.BOT_TOKEN);
