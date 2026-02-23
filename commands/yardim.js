@@ -5,18 +5,21 @@ module.exports = {
 
     const helpMessage = `
 🎵 **Müzik Komutları**
+\`!play <mp3 link>\` → Müzik çalar
+\`!pause\` → Müziği duraklatır
+\`!resume\` → Müziği devam ettirir
+\`!stop\` → Müziği tamamen durdurur
+\`!skip\` → Sıradaki şarkıya geçer
+\`!leave\` → Ses kanalından çıkar
 
-!play <mp3 link>  → MP3 çalar
-!pause            → Müziği duraklatır
-!resume           → Müziği devam ettirir
-!stop             → Müziği tamamen durdurur
+👑 **Rol Komutları**
+\`!roller\` → Özel rolleri oluşturur
+\`!rol <kullanıcıID> <rolID>\` → Kullanıcıya rol verir
 
-🎲 **Eğlence Komutları**
-
-!rol              → Rastgele sayı atar
-!roller           → Zar atar
-
-📌 Bot Railway üzerinde 7/24 çalışmaktadır.
+⚙️ **Diğer Komutlar**
+\`!ping\` → Bot gecikmesini gösterir
+\`!kur\` → Sistem kurulumunu yapar
+\`!yardim\` → Bu menüyü gösterir
 `;
 
     message.reply(helpMessage);
