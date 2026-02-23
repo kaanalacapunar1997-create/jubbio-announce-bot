@@ -62,3 +62,12 @@ client.once("ready", () => {
 
 client.login(process.env.BOT_TOKEN);
 console.log("TOKEN:", process.env.BOT_TOKEN);
+client.voiceStates = new Map();
+
+client.on("voiceStateUpdate", (oldState, newState) => {
+  if (newState.channelId) {
+    client.voiceStates.set(newState.userId, newState.channelId);
+  } else {
+    client.voiceStates.delete(newState.userId);
+  }
+});

@@ -20,15 +20,14 @@ module.exports = {
 
     const validation = await play.so_validate(url);
     if (!validation || validation !== "track") {
-      return message.reply("❌ Geçerli bir SoundCloud track linki değil.");
+      return message.reply("❌ Geçerli bir SoundCloud linki değil.");
     }
 
-    // Güvenli voice kontrolü
-    if (!message.member || !message.member.voice || !message.member.voice.channel) {
+    const userVoiceChannelId = client.voiceStates.get(message.author.id);
+
+    if (!userVoiceChannelId) {
       return message.reply("❌ Önce bir ses kanalına gir.");
     }
-
-    const channel = message.member.voice.channel;
 
     if (!client.music) client.music = {};
 
@@ -44,7 +43,6 @@ module.exports = {
     const musicData = client.music[message.guildId];
 
     musicData.queue.push(url);
-
     message.reply("🎵 Şarkı kuyruğa eklendi.");
 
     if (musicData.playing) return;
@@ -62,7 +60,7 @@ module.exports = {
 
       if (!musicData.connection) {
         musicData.connection = joinVoiceChannel({
-          channelId: channel.id,
+          channelId: userVoiceChannelId,
           guildId: message.guildId,
           adapterCreator: client.voice.adapters.get(message.guildId)
         });
@@ -86,15 +84,8 @@ module.exports = {
           playNext();
         });
 
-        musicData.player.on("error", (err) => {
-          console.error("Player error:", err);
-          playNext();
-        });
-
-        console.log("🎵 SoundCloud çalıyor...");
-
       } catch (err) {
-        console.error("Stream error:", err);
+        console.error(err);
         playNext();
       }
     }
