@@ -12,7 +12,8 @@ module.exports = {
 
     try {
 
-      await client.rest.put(
+      await client.rest.request(
+        "PUT",
         `/bot/guilds/${message.guildId}/members/${userId}/roles/${roleId}`
       );
 
