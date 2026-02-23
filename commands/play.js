@@ -34,16 +34,14 @@ module.exports = {
 
     const musicData = client.music[message.guildId];
 
-    if (!musicData.connection) {
-      const adapterCreator = client.voice?.adapters?.get(message.guildId);
-      if (!adapterCreator) {
-        return message.reply("❌ Ses adaptörü bulunamadı.");
-      }
+    // Bağlantı yoksa veya destroy edilmişse yeniden bağlan
+    if (!musicData.connection || musicData.connection.state?.status === "destroyed") {
       musicData.connection = joinVoiceChannel({
         channelId: userChannelId,
         guildId: message.guildId,
-        adapterCreator
+        adapterCreator: client.voice?.adapters?.get(message.guildId)
       });
+      musicData.player = null;
     }
 
     if (!musicData.player) {
