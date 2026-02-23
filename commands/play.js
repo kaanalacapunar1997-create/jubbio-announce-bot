@@ -76,9 +76,7 @@ module.exports = {
       try {
         const stream = await play.stream(nextUrl);
 
-        const resource = createAudioResource(stream.stream, {
-          inputType: stream.type
-        });
+        const resource = createAudioResource(stream.url);
 
         musicData.player.play(resource);
 
