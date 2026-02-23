@@ -1,117 +1,99 @@
 require("dotenv").config();
+
 const { Client, GatewayIntentBits } = require("@jubbio/core");
-const { Pool } = require("pg");
+const play = require("play-dl");
 
-const PREFIX = "?";
-const COOLDOWN_MS = 60000;
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
-
-(async () => {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS levels (
-        userId TEXT PRIMARY KEY,
-        xp INTEGER DEFAULT 0,
-        level INTEGER DEFAULT 0
-      );
-    `);
-    console.log("✅ Veritabanı hazır.");
-  } catch (err) {
-    console.error("❌ Veritabanı hatası:", err.message);
-  }
-})();
+// TimeoutNegativeWarning'i gizle (@jubbio/voice internal)
+const originalEmit = process.emit.bind(process);
+process.emit = function(event, ...args) {
+  if (event === "warning" && args[0]?.name === "TimeoutNegativeWarning") return false;
+  return originalEmit(event, ...args);
+};
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildVoiceStates
   ]
 });
 
-client.cooldowns = new Map();
+(async () => {
+  try {
+    const clientId = await play.getFreeClientID();
+    await play.setToken({ soundcloud: { client_id: clientId } });
+    console.log("✅ SoundCloud client_id alındı");
+  } catch (err) {
+    console.error("❌ SoundCloud client_id alınamadı:", err.message);
+  }
+})();
+
+const fs = require("fs");
+client.commands = new Map();
+client.voiceStates = new Map();
+
+const commandFiles = fs.readdirSync("./commands").filter(f => f.endsWith(".js"));
+for (const file of commandFiles) {
+  const command = require(`./commands/${file}`);
+  client.commands.set(command.name, command);
+}
 
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
+  if (!message.content.startsWith("!")) return;
 
-  const userId = message.author.id;
+  const args = message.content.slice(1).trim().split(/ +/);
+  const commandName = args.shift().toLowerCase();
 
-  if (message.content.startsWith(PREFIX)) {
-    const args = message.content.slice(PREFIX.length).trim().split(/ +/);
-    const command = args.shift().toLowerCase();
-
-    if (command === "ping") {
-      return message.reply("🏓 Level bot aktif!");
-    }
-
-    if (command === "level") {
-      try {
-        const result = await pool.query(
-          "SELECT * FROM levels WHERE userId = $1",
-          [userId]
-        );
-
-        if (result.rows.length === 0) {
-          return message.reply("📊 Seviye: 0\n⭐ XP: 0");
-        }
-
-        const row = result.rows[0];
-        return message.reply(`📊 Seviye: ${row.level}\n⭐ XP: ${row.xp}`);
-      } catch (err) {
-        console.error("❌ level komutu hatası:", err.message);
-        return message.reply("❌ Bir hata oluştu.");
-      }
-    }
-  }
-
-  // Cooldown kontrolü
-  const lastMessage = client.cooldowns.get(userId);
-  if (lastMessage && Date.now() - lastMessage < COOLDOWN_MS) return;
-  client.cooldowns.set(userId, Date.now());
-
-  const xpGain = Math.floor(Math.random() * 11) + 5;
+  const command = client.commands.get(commandName);
+  if (!command) return;
 
   try {
-    const result = await pool.query(
-      "SELECT * FROM levels WHERE userId = $1",
-      [userId]
-    );
-
-    if (result.rows.length === 0) {
-      await pool.query(
-        "INSERT INTO levels (userId, xp, level) VALUES ($1, $2, $3)",
-        [userId, xpGain, 0]
-      );
-    } else {
-      const row = result.rows[0];
-      let newXP = row.xp + xpGain;
-      let newLevel = row.level;
-
-      const nextLevelXp = (newLevel + 1) * 100;
-
-      if (newXP >= nextLevelXp) {
-        newLevel++;
-        message.reply(
-          `🎉 ${message.author.username} seviye atladı! Yeni seviye: ${newLevel}`
-        );
-      }
-
-      await pool.query(
-        "UPDATE levels SET xp = $1, level = $2 WHERE userId = $3",
-        [newXP, newLevel, userId]
-      );
-    }
+    await command.execute(client, message, args);
   } catch (err) {
-    console.error("❌ XP güncelleme hatası:", err.message);
+    console.error("❌ Komut hatası:", err.message);
+    message.reply("❌ Hata oluştu.");
   }
 });
 
-client.once("ready", () => {
-  console.log(`✅ Level Bot Hazır: ${client.user.username}`);
+client.once("ready", async () => {
+  console.log(`✅ Bot hazır! Kullanıcı: ${client.user.username}`);
+
+  try {
+    for (const guild of client.guilds.values()) {
+      const voiceStates = await client.rest.request("GET", `/bot/guilds/${guild.id}/voice-states`).catch(() => null);
+      if (!voiceStates) continue;
+      const list = Array.isArray(voiceStates) ? voiceStates : (voiceStates.data || []);
+      for (const vs of list) {
+        const userId = vs.userId || vs.user_id;
+        const channelId = vs.channelId || vs.channel_id;
+        if (userId && channelId) client.voiceStates.set(userId, channelId);
+      }
+    }
+    console.log(`✅ Ses durumları yüklendi (${client.voiceStates.size} kullanıcı)`);
+  } catch (err) {
+    console.error("⚠️ Ses durumları yüklenemedi:", err.message);
+  }
+});
+
+client.on("voiceStateUpdate", (oldState, newState) => {
+  const userId = newState?.userId || newState?.user_id;
+  const channelId = newState?.channelId || newState?.channel_id;
+  if (!userId) return;
+  if (channelId) {
+    client.voiceStates.set(userId, channelId);
+  } else {
+    client.voiceStates.delete(userId);
+  }
+});
+
+client.on("disconnect", () => {
+  console.log("⚠️ Bağlantı kesildi, yeniden bağlanıyor...");
+});
+
+client.on("error", (err) => {
+  console.error("❌ Bot hatası:", err.message);
 });
 
 process.on("uncaughtException", (err) => {
