@@ -3,42 +3,20 @@ module.exports = {
 
   async execute(client, message, args) {
 
-    if (!args.length) {
-      return message.reply("Kullanım: !rol @kullanıcı RolAdı");
+    if (args.length < 2) {
+      return message.reply("Kullanım: !rol <kullanıcıID> <rolID>");
     }
 
-    const guild = client.guilds.cache.get(message.guildId);
-    if (!guild) return message.reply("❌ Sunucu bulunamadı.");
-
-    // Etiketli kullanıcıyı al
-    const mentioned = message.mentions?.users?.first?.();
-    if (!mentioned) {
-      return message.reply("❌ Kullanıcıyı etiketle.");
-    }
-
-    const roleName = args.slice(1).join(" ");
-    if (!roleName) {
-      return message.reply("❌ Rol adını yaz.");
-    }
+    const userId = args[0];
+    const roleId = args[1];
 
     try {
 
-      // Rolleri fetch et (önemli)
-      await guild.roles.fetch();
-
-      const role = guild.roles.cache.find(
-        r => r.name.toLowerCase() === roleName.toLowerCase()
+      await client.rest.put(
+        `/bot/guilds/${message.guildId}/members/${userId}/roles/${roleId}`
       );
 
-      if (!role) {
-        return message.reply("❌ Böyle bir rol yok.");
-      }
-
-      const member = await guild.members.fetch(mentioned.id);
-
-      await member.roles.add(role);
-
-      message.reply(`✅ ${mentioned.username} kullanıcısına **${role.name}** rolü verildi.`);
+      message.reply("✅ Rol başarıyla verildi.");
 
     } catch (err) {
       console.error("ROL HATASI:", err);
