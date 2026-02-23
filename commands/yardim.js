@@ -4,19 +4,19 @@ module.exports = {
   async execute(client, message) {
 
     const helpMessage = `
-📖 **Bot Komutları**
+🎵 **Müzik Komutları**
 
-🎵 !play <link>
-→ Şarkı çalar
+!play <mp3 link>  → MP3 çalar
+!pause            → Müziği duraklatır
+!resume           → Müziği devam ettirir
+!stop             → Müziği tamamen durdurur
 
-⏹ !stop
-→ Müziği durdurur
+🎲 **Eğlence Komutları**
 
-👋 !leave
-→ Ses kanalından çıkar
+!rol              → Rastgele sayı atar
+!roller           → Zar atar
 
-📖 !yardim
-→ Bu mesajı gösterir
+📌 Bot Railway üzerinde 7/24 çalışmaktadır.
 `;
 
     message.reply(helpMessage);
