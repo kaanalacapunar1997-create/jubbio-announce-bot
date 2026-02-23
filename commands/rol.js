@@ -4,33 +4,38 @@ module.exports = {
   async execute(client, message, args) {
 
     if (args.length < 2) {
-      return message.reply("Kullanım: !rol <kullanıcıID> <RolAdı>");
+      return message.reply("Kullanım: !rol @kullanıcı RolAdı");
     }
 
-    const guild = client.guilds.cache.get(message.guildId);
-    if (!guild) return message.reply("❌ Sunucu bulunamadı.");
+    // Etiketli kullanıcıyı al
+    const mentioned = message.mentions?.users?.[0];
+    if (!mentioned) {
+      return message.reply("❌ Kullanıcıyı etiketle.");
+    }
 
-    const userId = args[0];
     const roleName = args.slice(1).join(" ");
 
     try {
-      // Rolleri REST ile çekiyoruz (cache yerine)
+
+      // Rolleri API'den çek
       const roles = await client.rest.getGuildRoles(message.guildId);
-      const role = roles.find(r => r.name === roleName);
+      const role = roles.find(r => r.name.toLowerCase() === roleName.toLowerCase());
 
       if (!role) {
-        return message.reply("❌ Böyle bir rol bulunamadı.");
+        return message.reply("❌ Böyle bir rol yok.");
       }
 
+      // Rolü ver
       await client.rest.addGuildMemberRole(
         message.guildId,
-        userId,
+        mentioned.id,
         role.id
       );
 
-      message.reply(`✅ ${roleName} rolü başarıyla verildi.`);
+      message.reply(`✅ ${mentioned.username} kullanıcısına **${role.name}** rolü verildi.`);
+
     } catch (err) {
-      console.error("ROL HATA:", err);
+      console.error("ROL HATASI:", err);
       message.reply("❌ Rol verilemedi.");
     }
   }
