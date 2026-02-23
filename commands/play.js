@@ -1,12 +1,11 @@
-const {
+﻿const {
   joinVoiceChannel,
   createAudioPlayer,
   createAudioResource,
-  AudioPlayerStatus
+  AudioPlayerStatus,
+  StreamType
 } = require("@jubbio/voice");
-
-// 🎯 Müzik ses kanalının ID'si
-const VOICE_CHANNEL_ID = "546336747034783744";
+const play = require("play-dl");
 
 module.exports = {
   name: "play",
@@ -14,13 +13,14 @@ module.exports = {
   async execute(client, message, args) {
 
     if (!args[0]) {
-      return message.reply("❌ Direkt .mp3 linki gir.");
+      return message.reply("YouTube linki veya .mp3 linki gir.");
     }
 
     const url = args[0];
 
-    if (!url.endsWith(".mp3")) {
-      return message.reply("❌ Sadece .mp3 link destekleniyor.");
+    const userChannelId = client.voiceStates.get(message.author.id);
+    if (!userChannelId) {
+      return message.reply("Once bir ses kanalina gir.");
     }
 
     if (!client.music) client.music = {};
@@ -34,29 +34,49 @@ module.exports = {
 
     const musicData = client.music[message.guildId];
 
-    // Ses kanalına bağlan
     if (!musicData.connection) {
+      const adapterCreator = client.voice?.adapters?.get(message.guildId);
+      if (!adapterCreator) {
+        return message.reply("Ses adaptoru bulunamadi.");
+      }
       musicData.connection = joinVoiceChannel({
-        channelId: VOICE_CHANNEL_ID,
+        channelId: userChannelId,
         guildId: message.guildId,
-        adapterCreator: client.voice.adapters.get(message.guildId)
+        adapterCreator
       });
     }
 
-    // Player oluştur
     if (!musicData.player) {
       musicData.player = createAudioPlayer();
       musicData.connection.subscribe(musicData.player);
     }
 
-    const resource = createAudioResource(url);
+    let resource;
+
+    if (url.endsWith(".mp3")) {
+      resource = createAudioResource(url);
+      message.reply("MP3 caliyor!");
+    } else if (play.yt_validate(url) === "video") {
+      try {
+        const stream = await play.stream(url);
+        resource = createAudioResource(stream.stream, {
+          inputType: stream.type
+        });
+        const info = await play.video_info(url);
+        const title = info.video_details.title;
+        message.reply(`Caliyor: **${title}**`);
+      } catch (err) {
+        console.error("YouTube hata:", err);
+        return message.reply("YouTube videosu yuklenemedi.");
+      }
+    } else {
+      return message.reply("Gecersiz link. YouTube veya .mp3 linki gir.");
+    }
 
     musicData.player.play(resource);
 
     musicData.player.once(AudioPlayerStatus.Idle, () => {
-      console.log("🎵 Şarkı bitti.");
+      console.log("Sarki bitti.");
     });
-
-    message.reply("🎵 MP3 çalıyor!");
   }
 };
