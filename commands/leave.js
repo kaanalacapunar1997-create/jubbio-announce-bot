@@ -3,21 +3,29 @@ module.exports = {
 
   async execute(client, message) {
 
-    if (!client.musicConnection) {
+    const musicData = client.music?.[message.guildId];
+
+    if (!musicData || !musicData.connection) {
       return message.reply("❌ Bot zaten ses kanalında değil.");
     }
 
     try {
-      client.musicPlayer?.stop();
-      client.musicConnection.destroy();
+      // Player durdur
+      if (musicData.player) {
+        musicData.player.stop();
+      }
 
-      client.musicConnection = null;
-      client.musicPlayer = null;
+      // Bağlantıyı kapat
+      musicData.connection.destroy();
 
-      message.reply("👋 Ses kanalından çıktım.");
+      // Sunucu müzik verisini temizle
+      delete client.music[message.guildId];
+
+      message.reply("👋 Ses kanalından ayrıldım.");
+
     } catch (err) {
       console.error(err);
-      message.reply("❌ Çıkarken hata oluştu.");
+      message.reply("⚠️ Çıkarken hata oluştu.");
     }
   }
 };
