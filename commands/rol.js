@@ -3,13 +3,25 @@ module.exports = {
 
   async execute(client, message, args) {
 
-    if (!message.member.permissions?.has("MANAGE_ROLES")) {
+    const guild = client.guilds.cache.get(message.guildId);
+    if (!guild) return message.reply("❌ Sunucu bulunamadı.");
+
+    const authorMember = guild.members.cache.get(message.author.id);
+    if (!authorMember) return message.reply("❌ Üye bilgisi alınamadı.");
+
+    // Yetki kontrolü (isteğe bağlı)
+    if (!authorMember.permissions.has("MANAGE_ROLES")) {
       return message.reply("❌ Rol verme yetkin yok.");
     }
 
-    const user = message.mentions?.users?.first?.();
-    if (!user) {
+    const mentionedUser = message.mentions?.users?.first?.();
+    if (!mentionedUser) {
       return message.reply("❌ Bir kullanıcı etiketle.");
+    }
+
+    const targetMember = guild.members.cache.get(mentionedUser.id);
+    if (!targetMember) {
+      return message.reply("❌ Kullanıcı bulunamadı.");
     }
 
     const roleName = args.slice(1).join(" ");
@@ -17,17 +29,14 @@ module.exports = {
       return message.reply("❌ Verilecek rol adını yaz.");
     }
 
-    const guild = client.guilds.cache.get(message.guildId);
-    const member = guild.members.cache.get(user.id);
     const role = guild.roles.cache.find(r => r.name === roleName);
-
     if (!role) {
       return message.reply("❌ Böyle bir rol bulunamadı.");
     }
 
     try {
-      await member.roles.add(role);
-      message.reply(`✅ ${user.username} kullanıcısına **${role.name}** rolü verildi.`);
+      await targetMember.roles.add(role);
+      message.reply(`✅ ${mentionedUser.username} kullanıcısına **${role.name}** rolü verildi.`);
     } catch (err) {
       console.error(err);
       message.reply("❌ Rol verilirken hata oluştu.");
