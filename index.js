@@ -31,7 +31,7 @@ client.on("messageCreate", async (message) => {
   const userId = message.author.id;
 
   // Cooldown
-  const cooldownTime = 30000;
+ const cooldownTime = 5000;
   const now = Date.now();
 
   if (client.cooldowns.has(userId)) {
