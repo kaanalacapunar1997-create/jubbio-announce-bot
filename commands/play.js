@@ -27,9 +27,9 @@ module.exports = {
     }
 
     // Kullanıcı doğru kanalda mı?
-    if (!message.member || !message.member.voice || message.member.voice.channelId !== VOICE_CHANNEL_ID) {
-      return message.reply("❌ Önce müzik ses kanalına gir.");
-    }
+// if (!message.member || !message.member.voice || message.member.voice.channelId !== VOICE_CHANNEL_ID) {
+//   return message.reply("❌ Önce müzik ses kanalına gir.");
+// }
 
     if (!client.music) client.music = {};
 
