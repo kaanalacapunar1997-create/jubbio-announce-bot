@@ -4,17 +4,31 @@ module.exports = {
   async execute(client, message) {
 
     const guildId = message.guildId;
-    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
     try {
 
+      // Önce mevcut rolleri çek
+      const existingRoles = await client.rest.request(
+        "GET",
+        `/bot/guilds/${guildId}/roles`
+      );
+
       const createRole = async (name, color) => {
+
+        const found = existingRoles.find(r => r.name === name);
+
+        if (found) {
+          console.log(`ROL ZATEN VAR: ${found.name} → ${found.id}`);
+          return found;
+        }
+
         const role = await client.rest.request(
           "POST",
           `/bot/guilds/${guildId}/roles`,
           { name, color }
         );
-        await sleep(1000);
+
+        console.log(`ROL OLUŞTU: ${role.name} → ${role.id}`);
         return role;
       };
 
@@ -27,11 +41,11 @@ module.exports = {
       await createRole("🏛 Konsey", 0x2F2F2F);
       await createRole("👑 Baron", 0xFFD700);
 
-      message.reply("🕴 Kurtlar Vadisi elit rolleri oluşturuldu.");
+      message.reply("🕴 Roller kontrol edildi / oluşturuldu.");
 
     } catch (err) {
       console.error("ROL HATA:", err);
-      message.reply("❌ Rol oluşturulurken hata oluştu.");
+      message.reply("❌ Rol işlemi sırasında hata oluştu.");
     }
   }
 };
