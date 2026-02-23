@@ -6,6 +6,7 @@ const {
   StreamType
 } = require("@jubbio/voice");
 const play = require("play-dl");
+const { spawn } = require("child_process");
 
 module.exports = {
   name: "play",
@@ -57,18 +58,38 @@ module.exports = {
       message.reply("🎵 MP3 çalıyor!");
     } else if (["video", "playlist"].includes(play.yt_validate(url))) {
       try {
-        // youtu.be veya playlist linkinden video ID'sini çıkar
-        let videoUrl = url;
         const ytMatch = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-        if (ytMatch) {
-          videoUrl = `https://www.youtube.com/watch?v=${ytMatch[1]}`;
-        }
-        const stream = await play.stream(videoUrl);
-        resource = createAudioResource(stream.stream, {
-          inputType: stream.type
+        const videoUrl = ytMatch
+          ? `https://www.youtube.com/watch?v=${ytMatch[1]}`
+          : url;
+
+        // yt-dlp ile başlık al
+        const titleProc = spawn("yt-dlp", ["--get-title", "--no-playlist", videoUrl]);
+        const title = await new Promise((resolve) => {
+          let out = "";
+          titleProc.stdout.on("data", d => out += d.toString());
+          titleProc.on("close", () => resolve(out.trim() || "Bilinmeyen"));
         });
-        const info = await play.video_info(videoUrl);
-        const title = info.video_details.title;
+
+        // yt-dlp ile direkt ses URL'ini al
+        const audioUrl = await new Promise((resolve, reject) => {
+          const proc = spawn("yt-dlp", [
+            "-f", "bestaudio",
+            "--no-playlist",
+            "--get-url",
+            videoUrl
+          ]);
+          let out = "";
+          proc.stdout.on("data", d => out += d.toString());
+          proc.stderr.on("data", () => {});
+          proc.on("close", code => {
+            const url = out.trim().split("\n")[0];
+            if (url) resolve(url);
+            else reject(new Error("URL alınamadı"));
+          });
+        });
+
+        resource = createAudioResource(audioUrl);
         message.reply(`🎵 Çalıyor: **${title}**`);
       } catch (err) {
         console.error("YouTube hata:", err);
