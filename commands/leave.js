@@ -8,20 +8,13 @@ module.exports = {
     }
 
     try {
-      // Müziği durdur
-      if (client.musicPlayer) {
-        client.musicPlayer.stop();
-      }
-
-      // Kanaldan çık
+      client.musicPlayer?.stop();
       client.musicConnection.destroy();
 
-      // Hafızayı temizle
-      client.musicPlayer = null;
       client.musicConnection = null;
+      client.musicPlayer = null;
 
       message.reply("👋 Ses kanalından çıktım.");
-
     } catch (err) {
       console.error(err);
       message.reply("❌ Çıkarken hata oluştu.");

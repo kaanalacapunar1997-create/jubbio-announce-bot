@@ -1,12 +1,11 @@
-const { spawn } = require("child_process");
-const fs = require("fs");
-const path = require("path");
-const { 
+const {
   joinVoiceChannel,
   createAudioPlayer,
   createAudioResource,
   AudioPlayerStatus
 } = require("@jubbio/voice");
+
+const play = require("play-dl");
 
 module.exports = {
   name: "play",
@@ -14,100 +13,83 @@ module.exports = {
   async execute(client, message, args) {
 
     if (!args[0]) {
-      return message.reply("❌ Link gir.");
+      return message.reply("❌ SoundCloud linki gir.");
     }
 
-    const VOICE_CHANNEL_ID = "546336747034783744";
-    const GUILD_ID = message.guildId;
+    const url = args[0];
 
-    const mp3Path = path.join(__dirname, "song.mp3");
-    const wavPath = path.join(__dirname, "song.wav");
+    if (!play.so_validate(url)) {
+      return message.reply("❌ Geçerli bir SoundCloud linki değil.");
+    }
 
-    message.reply("⬇️ İndiriliyor...");
+    const channel = message.member.voice.channel;
+    if (!channel) {
+      return message.reply("❌ Önce bir ses kanalına gir.");
+    }
 
-    // 🔥 YOUTUBE BLOCK FIX
-    const ytdlp = spawn("yt-dlp", [
-      "-f", "bestaudio",
-      "--no-playlist",
-      "--extractor-args", "youtube:player_client=android",
-      "-o", mp3Path,
-      args[0]
-    ]);
+    // Sunucuya özel müzik objesi oluştur
+    if (!client.music) client.music = {};
+    if (!client.music[message.guildId]) {
+      client.music[message.guildId] = {
+        queue: [],
+        playing: false,
+        connection: null,
+        player: null
+      };
+    }
 
-    ytdlp.stdout.on("data", data => {
-      console.log("YTDLP STDOUT:", data.toString());
-    });
+    const musicData = client.music[message.guildId];
 
-    ytdlp.stderr.on("data", data => {
-      console.log("YTDLP STDERR:", data.toString());
-    });
+    musicData.queue.push(url);
 
-    ytdlp.on("error", err => {
-      console.log("YTDLP SPAWN ERROR:", err);
-      message.reply("❌ yt-dlp spawn error");
-    });
+    message.reply("🎵 Şarkı kuyruğa eklendi.");
 
-    ytdlp.on("close", (code) => {
+    if (musicData.playing) return;
 
-      console.log("YTDLP EXIT CODE:", code);
+    async function playNext() {
 
-      if (code !== 0) {
-        return message.reply("❌ İndirme hatası.");
+      if (musicData.queue.length === 0) {
+        musicData.playing = false;
+        return;
       }
 
-      console.log("MP3 indirildi.");
+      musicData.playing = true;
 
-      const ffmpeg = spawn("ffmpeg", [
-        "-y",
-        "-i", mp3Path,
-        "-ar", "48000",
-        "-ac", "2",
-        wavPath
-      ]);
+      const nextUrl = musicData.queue.shift();
 
-      ffmpeg.stderr.on("data", data => {
-        console.log("FFMPEG STDERR:", data.toString());
+      if (!musicData.connection) {
+        musicData.connection = joinVoiceChannel({
+          channelId: channel.id,
+          guildId: message.guildId,
+          adapterCreator: client.voice.adapters.get(message.guildId)
+        });
+      }
+
+      if (!musicData.player) {
+        musicData.player = createAudioPlayer();
+        musicData.connection.subscribe(musicData.player);
+      }
+
+      const stream = await play.stream(nextUrl);
+
+      const resource = createAudioResource(stream.stream, {
+        inputType: stream.type
       });
 
-      ffmpeg.on("close", (ffCode) => {
+      musicData.player.play(resource);
 
-        console.log("FFMPEG EXIT CODE:", ffCode);
-
-        if (ffCode !== 0) {
-          return message.reply("❌ Dönüştürme hatası.");
-        }
-
-        console.log("WAV hazır.");
-
-        const connection = joinVoiceChannel({
-          channelId: VOICE_CHANNEL_ID,
-          guildId: GUILD_ID,
-          adapterCreator: client.voice.adapters.get(GUILD_ID)
-        });
-
-        const player = createAudioPlayer();
-        const resource = createAudioResource(wavPath);
-
-        player.play(resource);
-        connection.subscribe(player);
-
-        player.on(AudioPlayerStatus.Playing, () => {
-          console.log("🎵 Çalıyor!");
-        });
-
-        player.on("idle", () => {
-          try {
-            fs.unlinkSync(mp3Path);
-            fs.unlinkSync(wavPath);
-          } catch {}
-        });
-
-        player.on("error", err => {
-          console.log("PLAYER ERROR:", err);
-        });
-
-        message.reply("🎶 Çalıyor...");
+      musicData.player.once(AudioPlayerStatus.Idle, () => {
+        playNext();
       });
-    });
+
+      musicData.player.on("error", (err) => {
+        console.error(err);
+        playNext();
+      });
+
+      console.log("🎵 SoundCloud çalıyor...");
+    }
+
+    playNext();
   }
 };
