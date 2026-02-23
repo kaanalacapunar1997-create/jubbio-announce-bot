@@ -7,6 +7,9 @@ const {
 
 const play = require("play-dl");
 
+// 🎯 Müzik yapılacak sabit kanal
+const VOICE_CHANNEL_ID = "546336747034783744";
+
 module.exports = {
   name: "play",
 
@@ -20,13 +23,12 @@ module.exports = {
 
     const validation = await play.so_validate(url);
     if (!validation || validation !== "track") {
-      return message.reply("❌ Geçerli bir SoundCloud linki değil.");
+      return message.reply("❌ Geçerli bir SoundCloud track linki değil.");
     }
 
-    const userVoiceChannelId = client.voiceStates.get(message.author.id);
-
-    if (!userVoiceChannelId) {
-      return message.reply("❌ Önce bir ses kanalına gir.");
+    // Kullanıcı doğru kanalda mı?
+    if (!message.member || !message.member.voice || message.member.voice.channelId !== VOICE_CHANNEL_ID) {
+      return message.reply("❌ Önce müzik ses kanalına gir.");
     }
 
     if (!client.music) client.music = {};
@@ -41,8 +43,8 @@ module.exports = {
     }
 
     const musicData = client.music[message.guildId];
-
     musicData.queue.push(url);
+
     message.reply("🎵 Şarkı kuyruğa eklendi.");
 
     if (musicData.playing) return;
@@ -60,7 +62,7 @@ module.exports = {
 
       if (!musicData.connection) {
         musicData.connection = joinVoiceChannel({
-          channelId: userVoiceChannelId,
+          channelId: VOICE_CHANNEL_ID,
           guildId: message.guildId,
           adapterCreator: client.voice.adapters.get(message.guildId)
         });
@@ -85,7 +87,7 @@ module.exports = {
         });
 
       } catch (err) {
-        console.error(err);
+        console.error("Stream error:", err);
         playNext();
       }
     }
