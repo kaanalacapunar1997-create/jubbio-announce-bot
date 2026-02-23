@@ -1,4 +1,4 @@
-﻿const {
+const {
   joinVoiceChannel,
   createAudioPlayer,
   createAudioResource,
@@ -13,15 +13,14 @@ module.exports = {
   async execute(client, message, args) {
 
     if (!args[0]) {
-      return message.reply("YouTube linki veya .mp3 linki gir.");
+      return message.reply("❌ YouTube linki veya .mp3 linki gir.");
     }
 
     const url = args[0];
 
-    const userChannelId = client.voiceStates.get(message.author.id);
-    if (!userChannelId) {
-      return message.reply("Once bir ses kanalina gir.");
-    }
+    const userChannelId = client.voiceStates.get(message.author.id)
+      || message.member?.voice?.channelId
+      || "546336747034783744";
 
     if (!client.music) client.music = {};
 
@@ -37,7 +36,7 @@ module.exports = {
     if (!musicData.connection) {
       const adapterCreator = client.voice?.adapters?.get(message.guildId);
       if (!adapterCreator) {
-        return message.reply("Ses adaptoru bulunamadi.");
+        return message.reply("❌ Ses adaptörü bulunamadı.");
       }
       musicData.connection = joinVoiceChannel({
         channelId: userChannelId,
@@ -55,28 +54,34 @@ module.exports = {
 
     if (url.endsWith(".mp3")) {
       resource = createAudioResource(url);
-      message.reply("MP3 caliyor!");
-    } else if (play.yt_validate(url) === "video") {
+      message.reply("🎵 MP3 çalıyor!");
+    } else if (["video", "playlist"].includes(play.yt_validate(url))) {
       try {
-        const stream = await play.stream(url);
+        // youtu.be veya playlist linkinden video ID'sini çıkar
+        let videoUrl = url;
+        const ytMatch = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+        if (ytMatch) {
+          videoUrl = `https://www.youtube.com/watch?v=${ytMatch[1]}`;
+        }
+        const stream = await play.stream(videoUrl);
         resource = createAudioResource(stream.stream, {
           inputType: stream.type
         });
-        const info = await play.video_info(url);
+        const info = await play.video_info(videoUrl);
         const title = info.video_details.title;
-        message.reply(`Caliyor: **${title}**`);
+        message.reply(`🎵 Çalıyor: **${title}**`);
       } catch (err) {
         console.error("YouTube hata:", err);
-        return message.reply("YouTube videosu yuklenemedi.");
+        return message.reply("❌ YouTube videosu yüklenemedi.");
       }
     } else {
-      return message.reply("Gecersiz link. YouTube veya .mp3 linki gir.");
+      return message.reply("❌ Geçersiz link. YouTube veya .mp3 linki gir.");
     }
 
     musicData.player.play(resource);
 
     musicData.player.once(AudioPlayerStatus.Idle, () => {
-      console.log("Sarki bitti.");
+      console.log("🎵 Şarkı bitti.");
     });
   }
 };

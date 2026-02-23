@@ -56,8 +56,30 @@ client.on("messageCreate", async (message) => {
   }
 });
 
-client.once("ready", () => {
+client.voiceStates = new Map();
+
+client.once("ready", async () => {
   console.log(`✅ Bot hazır! User: ${client.user.username}`);
+
+  // Sunucudaki mevcut ses durumlarını yükle
+  try {
+    for (const guild of client.guilds.values()) {
+      const voiceStates = await client.rest.request("GET", `/bot/guilds/${guild.id}/voice-states`).catch(() => null);
+      if (!voiceStates) continue;
+      const list = Array.isArray(voiceStates) ? voiceStates : (voiceStates.data || []);
+      console.log("🔍 Voice states örnek:", JSON.stringify(list[0] || {}));
+      for (const vs of list) {
+        const userId = vs.userId || vs.user_id;
+        const channelId = vs.channelId || vs.channel_id;
+        if (userId && channelId) {
+          client.voiceStates.set(userId, channelId);
+        }
+      }
+    }
+    console.log(`✅ Ses durumları yüklendi (${client.voiceStates.size} kullanıcı)`);
+  } catch (err) {
+    console.error("⚠️ Ses durumları yüklenemedi:", err.message);
+  }
 });
 
 client.voiceStates = new Map();
@@ -81,9 +103,12 @@ process.on("unhandledRejection", (err) => {
 client.login(process.env.BOT_TOKEN);
 
 client.on("voiceStateUpdate", (oldState, newState) => {
-  if (newState.channelId) {
-    client.voiceStates.set(newState.userId, newState.channelId);
+  console.log("🔍 voiceStateUpdate:", JSON.stringify(newState));
+  const userId = newState.userId || newState.user_id;
+  const channelId = newState.channelId || newState.channel_id;
+  if (channelId) {
+    client.voiceStates.set(userId, channelId);
   } else {
-    client.voiceStates.delete(newState.userId);
+    client.voiceStates.delete(userId);
   }
 });
