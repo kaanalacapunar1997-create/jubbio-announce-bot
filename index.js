@@ -1,7 +1,19 @@
 require("dotenv").config();
 const { Client, GatewayIntentBits } = require("@jubbio/core");
+const sqlite3 = require("sqlite3").verbose();
 
 const PREFIX = "?";
+
+const db = new sqlite3.Database("./levels.db");
+
+// Tablo oluştur
+db.run(`
+CREATE TABLE IF NOT EXISTS levels (
+  userId TEXT PRIMARY KEY,
+  xp INTEGER,
+  level INTEGER
+)
+`);
 
 const client = new Client({
   intents: [
@@ -11,7 +23,6 @@ const client = new Client({
   ]
 });
 
-client.levels = new Map();
 client.cooldowns = new Map();
 
 client.on("messageCreate", async (message) => {
@@ -19,65 +30,77 @@ client.on("messageCreate", async (message) => {
 
   const userId = message.author.id;
 
-  // XP cooldown (30 saniye)
+  // Cooldown
   const cooldownTime = 30000;
   const now = Date.now();
 
   if (client.cooldowns.has(userId)) {
     const expirationTime = client.cooldowns.get(userId) + cooldownTime;
-    if (now < expirationTime) {
-      // XP verme ama komutları kontrol etmeye devam et
-    } else {
-      client.cooldowns.set(userId, now);
-      addXP(userId, message);
-    }
-  } else {
-    client.cooldowns.set(userId, now);
-    addXP(userId, message);
+    if (now < expirationTime) return;
   }
 
-  // Prefix kontrol
+  client.cooldowns.set(userId, now);
+
+  addXP(userId, message);
+
   if (!message.content.startsWith(PREFIX)) return;
 
   const args = message.content.slice(PREFIX.length).trim().split(/ +/);
   const command = args.shift().toLowerCase();
 
   if (command === "ping") {
-    return message.reply("🏓 Pong! Level bot aktif.");
+    return message.reply("🏓 Level bot aktif!");
   }
 
   if (command === "level") {
-    if (!client.levels.has(userId)) {
-      client.levels.set(userId, { xp: 0, level: 0 });
-    }
+    db.get(
+      "SELECT * FROM levels WHERE userId = ?",
+      [userId],
+      (err, row) => {
+        if (!row) {
+          return message.reply("📊 Seviye: 0\n⭐ XP: 0");
+        }
 
-    const userData = client.levels.get(userId);
-
-    return message.reply(
-      `📊 Seviye: ${userData.level}\n⭐ XP: ${userData.xp}`
+        message.reply(
+          `📊 Seviye: ${row.level}\n⭐ XP: ${row.xp}`
+        );
+      }
     );
   }
 });
 
-// XP ekleme fonksiyonu
 function addXP(userId, message) {
-  if (!client.levels.has(userId)) {
-    client.levels.set(userId, { xp: 0, level: 0 });
-  }
+  db.get(
+    "SELECT * FROM levels WHERE userId = ?",
+    [userId],
+    (err, row) => {
+      if (!row) {
+        db.run(
+          "INSERT INTO levels (userId, xp, level) VALUES (?, ?, ?)",
+          [userId, 10, 0]
+        );
+        return;
+      }
 
-  const userData = client.levels.get(userId);
-  const xpGain = Math.floor(Math.random() * 11) + 5;
+      const xpGain = Math.floor(Math.random() * 11) + 5;
+      let newXP = row.xp + xpGain;
+      let newLevel = row.level;
 
-  userData.xp += xpGain;
+      const nextLevelXp = (newLevel + 1) * 100;
 
-  const nextLevelXp = (userData.level + 1) * 100;
+      if (newXP >= nextLevelXp) {
+        newLevel++;
+        message.reply(
+          `🎉 ${message.author.username} seviye atladı! Yeni seviye: ${newLevel}`
+        );
+      }
 
-  if (userData.xp >= nextLevelXp) {
-    userData.level++;
-    message.reply(
-      `🎉 ${message.author.username} seviye atladı! Yeni seviye: ${userData.level}`
-    );
-  }
+      db.run(
+        "UPDATE levels SET xp = ?, level = ? WHERE userId = ?",
+        [newXP, newLevel, userId]
+      );
+    }
+  );
 }
 
 client.once("ready", () => {
