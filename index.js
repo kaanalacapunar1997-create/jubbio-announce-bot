@@ -104,4 +104,8 @@ process.on("unhandledRejection", (err) => {
   console.error("❌ İşlenmemiş promise hatası:", err?.message || err);
 });
 
+// Replit uyku önleyici
+const http = require("http");
+http.createServer((req, res) => res.end("Bot aktif")).listen(3000);
+
 client.login(process.env.BOT_TOKEN);
