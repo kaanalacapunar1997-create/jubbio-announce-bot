@@ -11,8 +11,6 @@ module.exports = {
         `/bot/guilds/${guildId}/roles`
       );
 
-      console.log("ROLLER API YANIT:", JSON.stringify(response));
-
       const roles = Array.isArray(response)
         ? response
         : response.data || response.roles || [];
@@ -22,8 +20,8 @@ module.exports = {
       }
 
       const list = roles
-        .filter(r => r.name !== "@everyone")
-        .map(r => `${r.name} → ID: ${r.id}`)
+        .filter(r => r.name !== "@everyone" && r.name !== "all")
+        .map(r => `${r.name} → ID: \`${r.id}\``)
         .join("\n");
 
       message.reply(`**Sunucu Rolleri:**\n${list}`);
