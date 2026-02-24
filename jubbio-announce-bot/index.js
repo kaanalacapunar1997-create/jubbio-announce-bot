@@ -2,10 +2,9 @@ require("dotenv").config();
 const { Client, GatewayIntentBits } = require("@jubbio/core");
 const RSSParser = require("rss-parser");
 
-const ANNOUNCE_CHANNEL_ID = "548500039761145856";
+const ANNOUNCE_CHANNEL_ID = process.env.ANNOUNCE_CHANNEL_ID || "548500039761145856";
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
 
-// Takip edilecek YouTube kanalları
 const YOUTUBE_CHANNELS = [
   { id: "UCiK2XqGgeptbWfLJ0Eb777Q", name: "CyberRulzTv" }
 ];
@@ -27,7 +26,12 @@ async function checkChannel(channel) {
     const latest = feed.items[0];
     const videoId = latest.id || latest.link;
 
-    if (!lastVideoIds[channel.id]) {
+    if (!videoId) {
+      console.warn(`[${channel.name}] Video ID alinamadi.`);
+      return;
+    }
+
+    if (lastVideoIds[channel.id] === undefined) {
       lastVideoIds[channel.id] = videoId;
       console.log(`✅ [${channel.name}] İlk kontrol: ${latest.title}`);
       return;
@@ -50,9 +54,7 @@ async function checkChannel(channel) {
 }
 
 async function checkAll() {
-  for (const channel of YOUTUBE_CHANNELS) {
-    await checkChannel(channel);
-  }
+  await Promise.all(YOUTUBE_CHANNELS.map(channel => checkChannel(channel)));
 }
 
 client.once("ready", () => {
