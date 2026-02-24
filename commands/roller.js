@@ -11,9 +11,11 @@ module.exports = {
         `/bot/guilds/${guildId}/roles`
       );
 
+      console.log("ROLLER API YANIT:", JSON.stringify(response));
+
       const roles = Array.isArray(response)
         ? response
-        : response.data || [];
+        : response.data || response.roles || [];
 
       if (roles.length === 0) {
         return message.reply("Sunucuda hiç rol bulunamadı.");
