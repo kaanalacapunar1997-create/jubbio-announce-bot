@@ -57,6 +57,8 @@ async function checkAll() {
   await Promise.all(YOUTUBE_CHANNELS.map(channel => checkChannel(channel)));
 }
 
+client.on("messageCreate", () => {});
+
 client.once("ready", () => {
   console.log(`✅ Duyuru botu hazır: ${client.user.username}`);
   console.log(`📡 ${YOUTUBE_CHANNELS.length} kanal takip ediliyor`);
