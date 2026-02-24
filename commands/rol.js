@@ -25,8 +25,9 @@ module.exports = {
         ? response
         : response.data || response.roles || [];
 
-      // Rol adına göre eşleştir
-      const role = roles.find(r => r.name.toLowerCase() === roleName);
+      // Emoji ve özel karakterleri temizleyerek karşılaştır
+      const stripEmoji = str => str.replace(/[\u{1F000}-\u{1FFFF}|\u{2600}-\u{27BF}|\uFE0F|\u200D]/gu, "").trim().toLowerCase();
+      const role = roles.find(r => stripEmoji(r.name) === stripEmoji(roleName) || r.name.toLowerCase().includes(roleName));
 
       if (!role) {
         return message.reply(`❌ "${args.slice(1).join(" ")}" adında bir rol bulunamadı.`);
