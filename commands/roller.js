@@ -6,46 +6,29 @@ module.exports = {
     const guildId = message.guildId;
 
     try {
-
       const response = await client.rest.request(
         "GET",
         `/bot/guilds/${guildId}/roles`
       );
 
-      console.log("ROLLER RESPONSE:", response);
-
-      // Eğer response.data varsa onu kullan
-      const existingRoles = Array.isArray(response)
+      const roles = Array.isArray(response)
         ? response
         : response.data || [];
 
-      const createRole = async (name, color) => {
+      if (roles.length === 0) {
+        return message.reply("Sunucuda hiç rol bulunamadı.");
+      }
 
-        const found = existingRoles.find(r => r.name === name);
+      const list = roles
+        .filter(r => r.name !== "@everyone")
+        .map(r => `${r.name} → ID: ${r.id}`)
+        .join("\n");
 
-        if (found) {
-          console.log(`ROL ZATEN VAR: ${found.name} → ${found.id}`);
-          return found;
-        }
-
-        const role = await client.rest.request(
-          "POST",
-          `/bot/guilds/${guildId}/roles`,
-          { name, color }
-        );
-
-        console.log(`ROL OLUŞTU: ${role.name} → ${role.id}`);
-        return role;
-      };
-
-      await createRole("📜 Çırak", 0x3A3A3A);
-      await createRole("🏛 Konsey", 0x2F2F2F);
-
-      message.reply("✅ Roller kontrol edildi.");
+      message.reply(`**Sunucu Rolleri:**\n${list}`);
 
     } catch (err) {
       console.error("ROL HATA:", err);
-      message.reply("❌ Rol işlemi sırasında hata oluştu.");
+      message.reply("❌ Roller alınırken hata oluştu.");
     }
   }
 };
