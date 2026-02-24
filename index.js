@@ -41,7 +41,7 @@ for (const file of commandFiles) {
 
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
-  if (!message.content.startsWith("!")) return;
+  if (!message.content.startsWith("-")) return;
 
   const args = message.content.slice(1).trim().split(/ +/);
   const commandName = args.shift().toLowerCase();
@@ -103,9 +103,5 @@ process.on("uncaughtException", (err) => {
 process.on("unhandledRejection", (err) => {
   console.error("❌ İşlenmemiş promise hatası:", err?.message || err);
 });
-
-// Replit uyku önleyici
-const http = require("http");
-http.createServer((req, res) => res.end("Bot aktif")).listen(3000);
 
 client.login(process.env.BOT_TOKEN);
