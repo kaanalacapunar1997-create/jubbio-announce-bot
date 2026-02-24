@@ -21,7 +21,7 @@ module.exports = {
 
       const list = roles
         .filter(r => r.name !== "@everyone" && r.name !== "all")
-        .map(r => `${r.name} → ID: \`${r.id}\``)
+        .map(r => `• ${r.name}`)
         .join("\n");
 
       message.reply(`**Sunucu Rolleri:**\n${list}`);

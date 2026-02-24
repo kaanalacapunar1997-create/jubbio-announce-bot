@@ -4,20 +4,40 @@ module.exports = {
   async execute(client, message, args) {
 
     if (args.length < 2) {
-      return message.reply("Kullanım: !rol <kullanıcıID> <rolID>");
+      return message.reply("Kullanım: !rol @kullanıcı <rol adı>");
     }
 
-    const userId = args[0];
-    const roleId = args[1];
+    // Kullanıcı ID'sini mention'dan çıkar
+    const userMention = args[0];
+    const userId = userMention.replace(/[<@>]/g, "");
+
+    // Rol adını birleştir (birden fazla kelime olabilir)
+    const roleName = args.slice(1).join(" ").toLowerCase();
 
     try {
+      // Sunucudaki rolleri çek
+      const response = await client.rest.request(
+        "GET",
+        `/bot/guilds/${message.guildId}/roles`
+      );
+
+      const roles = Array.isArray(response)
+        ? response
+        : response.data || response.roles || [];
+
+      // Rol adına göre eşleştir
+      const role = roles.find(r => r.name.toLowerCase() === roleName);
+
+      if (!role) {
+        return message.reply(`❌ "${args.slice(1).join(" ")}" adında bir rol bulunamadı.`);
+      }
 
       await client.rest.request(
         "PUT",
-        `/bot/guilds/${message.guildId}/members/${userId}/roles/${roleId}`
+        `/bot/guilds/${message.guildId}/members/${userId}/roles/${role.id}`
       );
 
-      message.reply("✅ Rol başarıyla verildi.");
+      message.reply(`✅ <@${userId}> kullanıcısına **${role.name}** rolü verildi.`);
 
     } catch (err) {
       console.error("ROL HATASI:", err);
